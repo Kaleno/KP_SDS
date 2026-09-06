@@ -1,0 +1,1 @@
+@include('ketua.santri.form')
