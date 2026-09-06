@@ -1,7 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <h1 class="text-lg font-semibold text-slate-800">{{ $session->schedule->halaqah->name }}</h1>
+            <p class="ui-section-title">Absensi</p>
+            <h1 class="font-display text-2xl font-semibold text-teal-950">{{ $session->schedule->halaqah->name }}</h1>
             <p class="text-sm text-slate-500">
                 {{ $session->session_date->format('d/m/Y') }} · {{ $session->schedule->timeRange() }}
                 · {{ $session->schedule->location->name }}
@@ -9,11 +10,11 @@
         </div>
     </x-slot>
 
-    <div class="max-w-lg">
+    <div class="max-w-2xl">
         @if ($session->attendances->isEmpty())
-            <div class="bg-white rounded-2xl border border-slate-200 p-5 text-sm text-slate-600">
+            <x-empty>
                 Belum ada anggota aktif di halaqah ini. Minta Ketua menambahkan santri.
-            </div>
+            </x-empty>
         @else
             <form method="POST" action="{{ route('ops.attendance.update', $session) }}" class="space-y-4">
                 @csrf
@@ -21,10 +22,15 @@
                 <x-input-error :messages="$errors->get('rows')" class="mb-2" />
 
                 @foreach ($session->attendances->sortBy('santri.user.name') as $row)
-                    <div class="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
-                        <div>
-                            <p class="font-semibold text-slate-800">{{ $row->santri->user->name }}</p>
-                            <p class="text-sm text-slate-500">NIS {{ $row->santri->nis }}</p>
+                    <div class="ui-card p-4 space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-11 w-11 items-center justify-center rounded-full bg-teal-50 font-semibold text-teal-800">
+                                {{ mb_substr($row->santri->user->name, 0, 1) }}
+                            </div>
+                            <div>
+                                <p class="font-semibold text-teal-950">{{ $row->santri->user->name }}</p>
+                                <p class="text-sm text-slate-500">NIS {{ $row->santri->nis }}</p>
+                            </div>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             @foreach ($statuses as $status)
@@ -34,7 +40,7 @@
                                            value="{{ $status->value }}"
                                            class="peer sr-only"
                                            @checked(old('rows.'.$row->santri_id.'.status', $row->status->value) === $status->value)>
-                                    <span class="flex items-center justify-center min-h-12 rounded-xl border border-slate-300 text-base font-semibold text-slate-700 {{ $status->buttonClass() }}">
+                                    <span class="ui-choice {{ $status->buttonClass() }}">
                                         {{ $status->label() }}
                                     </span>
                                 </label>
@@ -44,19 +50,20 @@
                                name="rows[{{ $row->santri_id }}][note]"
                                value="{{ old('rows.'.$row->santri_id.'.note', $row->note) }}"
                                placeholder="Catatan (opsional)"
-                               class="w-full rounded-xl border-slate-300 text-base min-h-12">
+                               class="ui-input">
                     </div>
                 @endforeach
 
-                <button type="submit"
-                        class="w-full min-h-14 rounded-xl bg-teal-700 text-white font-semibold text-base">
+                <button type="submit" class="btn-primary btn-block min-h-14 text-base">
                     Simpan absensi
                 </button>
             </form>
         @endif
 
         <p class="mt-4 text-center">
-            <a href="{{ route('ops.attendance.index') }}" class="text-sm text-teal-700 font-medium">Kembali ke daftar sesi</a>
+            <a href="{{ route('ops.attendance.index') }}" class="ui-link text-sm inline-flex items-center gap-1">
+                <x-icon name="arrow-left" class="h-4 w-4" /> Kembali ke daftar sesi
+            </a>
         </p>
     </div>
 </x-app-layout>

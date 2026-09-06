@@ -1,31 +1,24 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Profil
-        </h2>
+        <div>
+            <p class="ui-section-title">Akun</p>
+            <h1 class="font-display text-2xl font-semibold text-teal-950">Profil</h1>
+        </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-profile-information-form')
-                </div>
-            </div>
+    <div class="max-w-2xl space-y-5">
+        <x-card>
+            @include('profile.partials.update-profile-information-form')
+        </x-card>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-password-form')
-                </div>
-            </div>
+        <x-card>
+            @include('profile.partials.update-password-form')
+        </x-card>
 
-            @unless (Auth::user()->hasAnyRole([\App\Support\Role::Santri, \App\Support\Role::OrangTua, \App\Support\Role::Ustaz]))
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
-                </div>
-            </div>
-            @endunless
-        </div>
+        @unless (Auth::user()->hasAnyRole([\App\Support\Role::Santri, \App\Support\Role::OrangTua, \App\Support\Role::Ustaz]))
+        <x-card>
+            @include('profile.partials.delete-user-form')
+        </x-card>
+        @endunless
     </div>
 </x-app-layout>
