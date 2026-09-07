@@ -8,7 +8,9 @@
     </x-slot>
 
     <div class="max-w-lg">
-        <form method="POST" action="{{ route('ops.setoran.update', $setoran) }}" class="ui-card p-5 space-y-4">
+        <form method="POST" action="{{ route('ops.setoran.update', $setoran) }}" class="ui-card space-y-4 p-5"
+              x-data="{ ayahMax: {{ $setoran->surah->ayah_count ?? 286 }} }"
+              @surah-picked.window="ayahMax = $event.detail.ayah">
             @csrf
             @method('PUT')
             @include('ops.setoran.form')

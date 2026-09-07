@@ -29,6 +29,7 @@ class StoreSetoranRequest extends FormRequest
             'ayah_end' => ['required', 'integer', 'gte:ayah_start'],
             'status' => ['required', Rule::enum(SetoranStatus::class)],
             'note' => ['nullable', 'string', 'max:500'],
+            'sesi' => ['nullable', 'integer', 'exists:attendance_sessions,id'],
         ];
     }
 

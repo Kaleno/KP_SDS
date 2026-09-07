@@ -61,7 +61,11 @@ class DashboardTest extends TestCase
             ->assertSee('Hasan Basri')
             ->assertSee('Al-Fatihah')
             ->assertSee('Belum setor hari ini')
-            ->assertSee('Setoran perlu diulang');
+            ->assertSee('Setoran perlu diulang')
+            ->assertSee('Minggu ini')
+            ->assertSee('Rekap minggu ini')
+            ->assertSee('Alfa minggu ini')
+            ->assertDontSee('Halaqah belum siap dipakai');
     }
 
     public function test_ustaz_dashboard_shows_their_halaqah_activity(): void
@@ -82,6 +86,19 @@ class DashboardTest extends TestCase
             ->assertSee('Yusuf Maulana')
             ->assertSee('Al-Fatihah')
             ->assertSee('Hasan Basri');
+    }
+
+    public function test_ketua_without_halaqah_sees_setup_banner(): void
+    {
+        $ketua = $this->userWithRole(Role::Ketua);
+
+        $this->actingAs($ketua)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Halaqah belum siap dipakai')
+            ->assertSee('Tahun ajaran aktif')
+            ->assertSee('Siapkan halaqah')
+            ->assertSee('Minggu ini');
     }
 
     public function test_other_ustaz_does_not_see_foreign_halaqah_on_dashboard(): void

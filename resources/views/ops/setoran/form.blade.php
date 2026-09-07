@@ -8,12 +8,15 @@
             {{ $setoran->santri->user->name }} · NIS {{ $setoran->santri->nis }}
         </div>
     @else
+        @if (($session ?? null))
+            <input type="hidden" name="sesi" value="{{ $session->id }}">
+        @endif
         <div>
             <x-input-label for="santri_id" value="Santri" />
             <select id="santri_id" name="santri_id" required class="mt-1.5 ui-input">
                 <option value="">Pilih santri</option>
                 @foreach ($members as $member)
-                    <option value="{{ $member->santri_id }}" @selected(old('santri_id') == $member->santri_id)>
+                    <option value="{{ $member->santri_id }}" @selected(old('santri_id', $members->count() === 1 ? $members->first()->santri_id : null) == $member->santri_id)>
                         {{ $member->santri->user->name }} — {{ $member->halaqah->name }}
                     </option>
                 @endforeach
@@ -22,23 +25,23 @@
         </div>
     @endif
 
-    <div>
-        <x-input-label for="setoran_date" value="Tanggal" />
-        <x-text-input id="setoran_date" type="date" name="setoran_date" class="mt-1.5"
-                      :value="old('setoran_date', $setoran?->setoran_date?->toDateString() ?? now()->toDateString())" required />
-        <x-input-error class="mt-2" :messages="$errors->get('setoran_date')" />
-    </div>
+    @if ($session ?? null)
+        <input type="hidden" name="setoran_date" value="{{ $session->session_date->toDateString() }}">
+        <div class="rounded-2xl bg-cream-100 px-4 py-3 text-sm text-slate-600">
+            Tanggal sesi {{ $session->session_date->format('d/m/Y') }} — setoran mengikuti tanggal absensi.
+        </div>
+    @else
+        <div>
+            <x-input-label for="setoran_date" value="Tanggal" />
+            <x-text-input id="setoran_date" type="date" name="setoran_date" class="mt-1.5"
+                          :value="old('setoran_date', $setoran?->setoran_date?->toDateString() ?? now()->toDateString())" required />
+            <x-input-error class="mt-2" :messages="$errors->get('setoran_date')" />
+        </div>
+    @endif
 
     <div>
         <x-input-label for="quran_surah_id" value="Surat" />
-        <select id="quran_surah_id" name="quran_surah_id" required class="mt-1.5 ui-input">
-            <option value="">Pilih surat</option>
-            @foreach ($surahs as $surah)
-                <option value="{{ $surah->id }}" @selected(old('quran_surah_id', $setoran?->quran_surah_id) == $surah->id)>
-                    {{ $surah->id }}. {{ $surah->name_id }} ({{ $surah->ayah_count }} ayat)
-                </option>
-            @endforeach
-        </select>
+        <x-surah-picker :surahs="$surahs" :selected="old('quran_surah_id', $setoran?->quran_surah_id)" />
         <x-input-error class="mt-2" :messages="$errors->get('quran_surah_id')" />
     </div>
 
@@ -46,12 +49,14 @@
         <div>
             <x-input-label for="ayah_start" value="Ayat awal" />
             <x-text-input id="ayah_start" type="number" min="1" name="ayah_start" class="mt-1.5"
+                          x-bind:max="ayahMax"
                           :value="old('ayah_start', $setoran?->ayah_start)" required />
             <x-input-error class="mt-2" :messages="$errors->get('ayah_start')" />
         </div>
         <div>
             <x-input-label for="ayah_end" value="Ayat akhir" />
             <x-text-input id="ayah_end" type="number" min="1" name="ayah_end" class="mt-1.5"
+                          x-bind:max="ayahMax"
                           :value="old('ayah_end', $setoran?->ayah_end)" required />
             <x-input-error class="mt-2" :messages="$errors->get('ayah_end')" />
         </div>

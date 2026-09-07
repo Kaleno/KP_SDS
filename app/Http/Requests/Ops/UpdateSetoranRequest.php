@@ -12,7 +12,7 @@ class UpdateSetoranRequest extends StoreSetoranRequest
     public function rules(): array
     {
         $rules = parent::rules();
-        unset($rules['santri_id']);
+        unset($rules['santri_id'], $rules['sesi']);
         $rules['correction_note'] = ['required', 'string', 'max:500'];
 
         return $rules;

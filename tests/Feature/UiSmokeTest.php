@@ -48,6 +48,7 @@ class UiSmokeTest extends TestCase
         $this->actingAs($fx['ketua'])->get(route('ops.setoran.index', ['date_from' => 'bukan-tanggal']))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ops.setoran.index', ['date_from' => '2026-02-31']))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('laporan.attendance.index', ['date_from' => 'bukan-tanggal']))->assertOk();
+        $this->actingAs($fx['ketua'])->get(route('ketua.setup.create'))->assertOk()->assertSee('Siapkan halaqah');
         $this->actingAs($fx['ketua'])->get(route('ops.setoran.create'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('laporan.progress.index'))->assertOk()->assertSee('4.73%');
         $this->actingAs($fx['ketua'])->get(route('laporan.progress.show', $fx['santri'][0]))->assertOk()->assertSee('7 / 6236');
@@ -62,12 +63,20 @@ class UiSmokeTest extends TestCase
         $rows = [];
         foreach ($fx['santri'] as $index => $santri) {
             $rows[$santri->id] = [
-                'status' => [AttendanceStatus::Hadir, AttendanceStatus::Izin, AttendanceStatus::Alfa][$index]->value,
+                'status' => [AttendanceStatus::Izin, AttendanceStatus::Hadir, AttendanceStatus::Alfa][$index]->value,
             ];
         }
         $this->actingAs($fx['ustaz'])
             ->put(route('ops.attendance.update', $session), ['rows' => $rows])
-            ->assertRedirect();
+            ->assertRedirect(route('ops.setoran.create', ['sesi' => $session->id]));
+
+        $this->actingAs($fx['ustaz'])
+            ->get(route('ops.setoran.create', ['sesi' => $session->id]))
+            ->assertOk()
+            ->assertSee('Hasan Basri')
+            ->assertSee('Cari nomor atau nama surat')
+            ->assertDontSee('Yusuf Maulana')
+            ->assertDontSee('Ahmad Fauzi');
 
         $this->actingAs($fx['ustaz'])->post(route('ops.setoran.store'), [
             'santri_id' => $fx['santri'][1]->id,

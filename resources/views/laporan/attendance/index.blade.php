@@ -8,7 +8,12 @@
     </x-slot>
 
     <div class="max-w-2xl space-y-4">
-        <form method="GET" class="ui-card p-5 space-y-3">
+        <form method="GET" class="ui-card space-y-3 p-5">
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('laporan.attendance.index', ['date_from' => now()->toDateString(), 'date_to' => now()->toDateString()]) }}" class="btn-secondary min-h-10 text-xs">Hari ini</a>
+                <a href="{{ route('laporan.attendance.index', ['date_from' => now()->copy()->startOfWeek(\Carbon\Carbon::MONDAY)->toDateString(), 'date_to' => now()->toDateString()]) }}" class="btn-secondary min-h-10 text-xs">Minggu ini</a>
+                <a href="{{ route('laporan.attendance.index', ['date_from' => now()->copy()->startOfMonth()->toDateString(), 'date_to' => now()->toDateString()]) }}" class="btn-secondary min-h-10 text-xs">Bulan ini</a>
+            </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <x-input-label for="date_from" value="Dari" />

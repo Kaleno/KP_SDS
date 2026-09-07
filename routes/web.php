@@ -2,18 +2,19 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Ketua\AcademicYearController;
-use App\Http\Controllers\Laporan\AttendanceRecapController;
-use App\Http\Controllers\Laporan\ProgressController;
-use App\Http\Controllers\Ops\AttendanceController;
-use App\Http\Controllers\Ops\SetoranController;
-use App\Http\Controllers\Portal\MonitorController;
 use App\Http\Controllers\Ketua\HalaqahController;
 use App\Http\Controllers\Ketua\HalaqahMemberController;
 use App\Http\Controllers\Ketua\LocationController;
 use App\Http\Controllers\Ketua\OrangTuaController;
 use App\Http\Controllers\Ketua\SantriController;
 use App\Http\Controllers\Ketua\ScheduleController;
+use App\Http\Controllers\Ketua\SetupWizardController;
 use App\Http\Controllers\Ketua\UstazController;
+use App\Http\Controllers\Laporan\AttendanceRecapController;
+use App\Http\Controllers\Laporan\ProgressController;
+use App\Http\Controllers\Ops\AttendanceController;
+use App\Http\Controllers\Ops\SetoranController;
+use App\Http\Controllers\Portal\MonitorController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SuperAdmin\KetuaAccountController;
 use App\Support\Role;
@@ -39,6 +40,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     });
 
     Route::middleware('role:'.Role::Ketua)->prefix('ketua')->name('ketua.')->group(function () {
+        Route::get('siapkan', [SetupWizardController::class, 'create'])->name('setup.create');
+        Route::post('siapkan', [SetupWizardController::class, 'store'])->name('setup.store');
+
         Route::get('tahun-ajaran', [AcademicYearController::class, 'index'])->name('academic-years.index');
         Route::post('tahun-ajaran', [AcademicYearController::class, 'store'])->name('academic-years.store');
         Route::put('tahun-ajaran/{academicYear}', [AcademicYearController::class, 'update'])->name('academic-years.update');

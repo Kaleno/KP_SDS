@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\HalaqahReadiness;
 use App\Services\OperationalDashboard;
 use App\Support\Role;
 use Illuminate\Http\RedirectResponse;
@@ -10,7 +11,10 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __construct(private OperationalDashboard $dashboard) {}
+    public function __construct(
+        private OperationalDashboard $dashboard,
+        private HalaqahReadiness $readiness,
+    ) {}
 
     public function __invoke(Request $request): View|RedirectResponse
     {
@@ -30,6 +34,7 @@ class DashboardController extends Controller
             'isKetua' => $isKetua,
             'isUstaz' => $isUstaz,
             'overview' => ($isKetua || $isUstaz) ? $this->dashboard->for($user) : null,
+            'readiness' => $isKetua ? $this->readiness->snapshot() : null,
         ]);
     }
 }

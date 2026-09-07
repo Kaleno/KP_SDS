@@ -186,6 +186,12 @@ class LaporanTest extends TestCase
             ->assertOk()
             ->assertSee('4.73%')
             ->assertSee('7 / 6236');
+
+        $this->actingAs($fx['ketua'])
+            ->get(route('laporan.progress.index'))
+            ->assertOk()
+            ->assertSee('4.73%')
+            ->assertSee('Juz 1');
     }
 
     /**

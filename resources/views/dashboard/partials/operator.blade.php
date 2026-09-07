@@ -106,6 +106,55 @@
     </div>
 @endif
 
+@php $week = $overview['week']; @endphp
+<section class="space-y-3">
+    <div class="flex items-center justify-between gap-3">
+        <h2 class="ui-section-title">Minggu ini</h2>
+        <a href="{{ route('laporan.attendance.index', ['date_from' => $week['from'], 'date_to' => $week['to']]) }}" class="text-sm font-semibold text-teal-800">
+            Rekap {{ $week['fromLabel'] }}–{{ $week['toLabel'] }}
+        </a>
+    </div>
+    <div class="ui-card p-4 sm:p-5">
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div class="rounded-xl bg-teal-50 px-3 py-2">
+                <p class="text-lg font-semibold text-teal-800">{{ $week['hadir'] }}</p>
+                <p class="text-xs text-teal-700">Hadir</p>
+            </div>
+            <div class="rounded-xl bg-amber-50 px-3 py-2">
+                <p class="text-lg font-semibold text-amber-800">{{ $week['izin'] }}</p>
+                <p class="text-xs text-amber-700">Izin</p>
+            </div>
+            <div class="rounded-xl bg-sky-50 px-3 py-2">
+                <p class="text-lg font-semibold text-sky-800">{{ $week['sakit'] }}</p>
+                <p class="text-xs text-sky-700">Sakit</p>
+            </div>
+            <div class="rounded-xl bg-rose-50 px-3 py-2">
+                <p class="text-lg font-semibold text-rose-800">{{ $week['alfa'] }}</p>
+                <p class="text-xs text-rose-700">Alfa</p>
+            </div>
+        </div>
+        @if ($week['alfaNames']->isNotEmpty())
+            <div class="mt-4 space-y-2">
+                <p class="text-sm font-semibold text-rose-800">Alfa minggu ini</p>
+                @foreach ($week['alfaNames'] as $row)
+                    <p class="text-sm text-slate-600">{{ $row->santri->user->name }} · {{ $row->session->session_date->format('d/m') }}</p>
+                @endforeach
+            </div>
+        @endif
+        @if ($week['missing']->isNotEmpty())
+            <div class="mt-4 space-y-2">
+                <p class="text-sm font-semibold text-slate-700">Belum tercatat minggu ini</p>
+                @foreach ($week['missing'] as $santri)
+                    <p class="text-sm text-slate-600">{{ $santri->user->name }}</p>
+                @endforeach
+            </div>
+        @endif
+        @if ($week['total'] === 0)
+            <p class="mt-3 text-sm text-slate-500">Belum ada absensi dari Senin sampai hari ini.</p>
+        @endif
+    </div>
+</section>
+
 <section class="space-y-3">
     <div class="flex items-center justify-between gap-3">
         <h2 class="ui-section-title">Slot {{ $overview['dayLabel'] }}</h2>
@@ -266,8 +315,8 @@
         <span class="flex items-center gap-3 font-semibold text-teal-950"><span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-50 text-teal-800"><x-icon name="chart" /></span>Progress juz</span>
         <x-icon name="arrow-right" class="h-4 w-4 text-slate-400 group-hover:text-teal-800" />
     </a>
-    <a class="ui-card group flex min-h-16 items-center justify-between px-5 py-4 transition hover:-translate-y-0.5 hover:shadow-lift" href="{{ route('laporan.attendance.index') }}">
-        <span class="flex items-center gap-3 font-semibold text-teal-950"><span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-50 text-teal-800"><x-icon name="clipboard" /></span>Rekap absensi</span>
+    <a class="ui-card group flex min-h-16 items-center justify-between px-5 py-4 transition hover:-translate-y-0.5 hover:shadow-lift" href="{{ route('laporan.attendance.index', ['date_from' => $overview['week']['from'], 'date_to' => $overview['week']['to']]) }}">
+        <span class="flex items-center gap-3 font-semibold text-teal-950"><span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-50 text-teal-800"><x-icon name="clipboard" /></span>Rekap minggu ini</span>
         <x-icon name="arrow-right" class="h-4 w-4 text-slate-400 group-hover:text-teal-800" />
     </a>
     <a class="ui-card group flex min-h-16 items-center justify-between px-5 py-4 transition hover:-translate-y-0.5 hover:shadow-lift" href="{{ route('ops.attendance.index') }}">

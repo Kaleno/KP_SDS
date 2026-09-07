@@ -37,6 +37,10 @@
             @endif
         </div>
 
+        @if ($isKetua && ($readiness['ready'] ?? true) === false)
+            @include('dashboard.partials.readiness')
+        @endif
+
         @if ($isSuperAdmin)
             <x-card>
                 <p class="text-sm text-slate-600">

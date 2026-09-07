@@ -14,6 +14,7 @@
             ['label' => 'Setoran', 'route' => 'ops.setoran.index', 'match' => 'ops.setoran.*', 'icon' => 'book', 'group' => 'Operasional', 'primary' => true],
             ['label' => 'Progress', 'route' => 'laporan.progress.index', 'match' => 'laporan.progress.*', 'icon' => 'chart', 'group' => 'Laporan', 'primary' => false],
             ['label' => 'Rekap', 'route' => 'laporan.attendance.index', 'match' => 'laporan.attendance.*', 'icon' => 'clipboard', 'group' => 'Laporan', 'primary' => false],
+            ['label' => 'Siapkan', 'route' => 'ketua.setup.create', 'match' => 'ketua.setup.*', 'icon' => 'spark', 'group' => 'Master data', 'primary' => false],
             ['label' => 'Tahun', 'route' => 'ketua.academic-years.index', 'match' => 'ketua.academic-years.*', 'icon' => 'calendar', 'group' => 'Master data', 'primary' => false],
             ['label' => 'Lokasi', 'route' => 'ketua.locations.index', 'match' => 'ketua.locations.*', 'icon' => 'map', 'group' => 'Master data', 'primary' => false],
             ['label' => 'Ustaz', 'route' => 'ketua.ustaz.index', 'match' => 'ketua.ustaz.*', 'icon' => 'academic', 'group' => 'Master data', 'primary' => false],

@@ -83,6 +83,15 @@ class AttendanceController extends Controller
         $this->access->assertHalaqah($request->user(), $attendanceSession->schedule->halaqah);
         $this->sessions->save($attendanceSession, $request->validated('rows') ?? []);
 
-        return back()->with('status', 'Absensi disimpan.');
+        $hadir = collect($request->validated('rows') ?? [])
+            ->contains(fn (array $row): bool => ($row['status'] ?? '') === AttendanceStatus::Hadir->value);
+
+        if ($hadir) {
+            return redirect()
+                ->route('ops.setoran.create', ['sesi' => $attendanceSession->id])
+                ->with('status', 'Absensi disimpan. Lanjut catat setoran santri yang hadir.');
+        }
+
+        return back()->with('status', 'Absensi disimpan. Tidak ada santri hadir untuk disetor.');
     }
 }

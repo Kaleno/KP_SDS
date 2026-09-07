@@ -52,7 +52,7 @@ class OperasionalTest extends TestCase
 
         $this->actingAs($fx['ustaz'])
             ->put(route('ops.attendance.update', $session), ['rows' => $rows])
-            ->assertRedirect();
+            ->assertRedirect(route('ops.setoran.create', ['sesi' => $session->id]));
 
         $this->assertSame(1, Attendance::query()->where('status', AttendanceStatus::Alfa)->count());
         $this->assertSame(1, Attendance::query()->where('status', AttendanceStatus::Izin)->count());
@@ -138,6 +138,94 @@ class OperasionalTest extends TestCase
         ])->assertSessionHasErrors('ayah_end');
     }
 
+    public function test_setoran_create_with_session_lists_only_hadir_waiting(): void
+    {
+        $fx = $this->opsFixture();
+        $session = $this->saveMixedAttendance($fx);
+
+        $this->actingAs($fx['ustaz'])
+            ->get(route('ops.setoran.create', ['sesi' => $session->id]))
+            ->assertOk()
+            ->assertSee('Ahmad Fauzi')
+            ->assertSee('Cari nomor atau nama surat')
+            ->assertDontSee('Yusuf Maulana')
+            ->assertDontSee('Hasan Basri');
+    }
+
+    public function test_other_ustaz_cannot_open_setoran_for_foreign_session(): void
+    {
+        $fx = $this->opsFixture();
+        $session = $this->saveMixedAttendance($fx);
+        $outsider = $this->userWithRole(Role::Ustaz, ['username' => 'ustaz2']);
+
+        $this->actingAs($outsider)
+            ->get(route('ops.setoran.create', ['sesi' => $session->id]))
+            ->assertForbidden();
+    }
+
+    public function test_setoran_with_session_rejects_absent_santri(): void
+    {
+        $fx = $this->opsFixture();
+        $this->seedFatihah();
+        $session = $this->saveMixedAttendance($fx);
+
+        $this->actingAs($fx['ustaz'])->post(route('ops.setoran.store'), [
+            'santri_id' => $fx['santri'][2]->id,
+            'quran_surah_id' => 1,
+            'setoran_date' => now()->toDateString(),
+            'ayah_start' => 1,
+            'ayah_end' => 7,
+            'status' => SetoranStatus::Lancar->value,
+            'sesi' => $session->id,
+        ])->assertSessionHasErrors('santri_id');
+
+        $this->assertSame(0, HafalanSetoran::query()->count());
+    }
+
+    public function test_setoran_with_session_continues_until_present_santri_are_recorded(): void
+    {
+        $fx = $this->opsFixture();
+        $this->seedFatihah();
+
+        $this->actingAs($fx['ustaz'])->post(route('ops.attendance.open', $fx['schedule']));
+        $session = AttendanceSession::query()->first();
+
+        $this->actingAs($fx['ustaz'])->put(route('ops.attendance.update', $session), [
+            'rows' => [
+                $fx['santri'][0]->id => ['status' => AttendanceStatus::Hadir->value],
+                $fx['santri'][1]->id => ['status' => AttendanceStatus::Hadir->value],
+                $fx['santri'][2]->id => ['status' => AttendanceStatus::Alfa->value],
+            ],
+        ])->assertRedirect(route('ops.setoran.create', ['sesi' => $session->id]));
+
+        $payload = [
+            'quran_surah_id' => 1,
+            'setoran_date' => now()->toDateString(),
+            'ayah_start' => 1,
+            'ayah_end' => 7,
+            'status' => SetoranStatus::Lancar->value,
+            'sesi' => $session->id,
+        ];
+
+        $this->actingAs($fx['ustaz'])->post(route('ops.setoran.store'), [
+            ...$payload,
+            'santri_id' => $fx['santri'][0]->id,
+        ])->assertRedirect(route('ops.setoran.create', ['sesi' => $session->id]));
+
+        $this->actingAs($fx['ustaz'])
+            ->get(route('ops.setoran.create', ['sesi' => $session->id]))
+            ->assertOk()
+            ->assertSee('Hasan Basri')
+            ->assertDontSee('Ahmad Fauzi');
+
+        $this->actingAs($fx['ustaz'])->post(route('ops.setoran.store'), [
+            ...$payload,
+            'santri_id' => $fx['santri'][1]->id,
+        ])->assertRedirect(route('ops.setoran.index'));
+
+        $this->assertSame(2, HafalanSetoran::query()->count());
+    }
+
     public function test_ketua_can_open_any_halaqah_session(): void
     {
         $fx = $this->opsFixture();
@@ -156,6 +244,27 @@ class OperasionalTest extends TestCase
         $this->actingAs($admin)
             ->get(route('ops.attendance.index'))
             ->assertForbidden();
+    }
+
+    /**
+     * @param  array{ustaz: User, schedule: Schedule, santri: list<SantriProfile>}  $fx
+     */
+    private function saveMixedAttendance(array $fx): AttendanceSession
+    {
+        $this->actingAs($fx['ustaz'])->post(route('ops.attendance.open', $fx['schedule']));
+        $session = AttendanceSession::query()->first();
+
+        $rows = [];
+        foreach ($fx['santri'] as $index => $santri) {
+            $status = [AttendanceStatus::Hadir, AttendanceStatus::Izin, AttendanceStatus::Alfa][$index];
+            $rows[$santri->id] = ['status' => $status->value];
+        }
+
+        $this->actingAs($fx['ustaz'])
+            ->put(route('ops.attendance.update', $session), ['rows' => $rows])
+            ->assertRedirect(route('ops.setoran.create', ['sesi' => $session->id]));
+
+        return $session;
     }
 
     /**

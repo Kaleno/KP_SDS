@@ -55,9 +55,15 @@
                 @endforeach
 
                 <button type="submit" class="btn-primary btn-block min-h-14 text-base">
-                    Simpan absensi
+                    Simpan absensi, lanjut setoran
                 </button>
             </form>
+
+            <p class="mt-3 text-center">
+                <a href="{{ route('ops.setoran.create', ['sesi' => $session]) }}" class="ui-link text-sm">
+                    Lewati ke setoran santri hadir
+                </a>
+            </p>
         @endif
 
         <p class="mt-4 text-center">
