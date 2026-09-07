@@ -21,11 +21,11 @@
                             <p class="text-sm text-slate-500">NIS {{ $row['santri']->nis }} · {{ $row['halaqah']->name }}</p>
                         </div>
                         <div class="text-right">
-                            <p class="font-display text-xl font-semibold text-teal-800">
+                            <p class="text-xl font-semibold tabular-nums text-teal-800">
                                 {{ $current ? $current->percent.'%' : $row['progress']->totalPercent.'%' }}
                             </p>
                             @if ($current)
-                                <p class="text-xs text-slate-500">Juz {{ $current->number }}</p>
+                                <p class="text-xs text-slate-500">Juz {{ $current->number }} dikerjakan</p>
                             @endif
                         </div>
                     </div>

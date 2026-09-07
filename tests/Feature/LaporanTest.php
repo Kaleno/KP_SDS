@@ -191,7 +191,7 @@ class LaporanTest extends TestCase
             ->get(route('laporan.progress.index'))
             ->assertOk()
             ->assertSee('4.73%')
-            ->assertSee('Juz 1');
+            ->assertSee('Juz 1 dikerjakan');
     }
 
     /**

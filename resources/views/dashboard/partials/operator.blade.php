@@ -111,11 +111,12 @@
     <div class="flex items-center justify-between gap-3">
         <h2 class="ui-section-title">Minggu ini</h2>
         <a href="{{ route('laporan.attendance.index', ['date_from' => $week['from'], 'date_to' => $week['to']]) }}" class="text-sm font-semibold text-teal-800">
-            Rekap {{ $week['fromLabel'] }}–{{ $week['toLabel'] }}
+            Rekap minggu ini
         </a>
     </div>
     <div class="ui-card p-4 sm:p-5">
-        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <p class="text-xs text-slate-500">{{ $week['fromLabel'] }}–{{ $week['toLabel'] }}</p>
+        <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
             <div class="rounded-xl bg-teal-50 px-3 py-2">
                 <p class="text-lg font-semibold text-teal-800">{{ $week['hadir'] }}</p>
                 <p class="text-xs text-teal-700">Hadir</p>
