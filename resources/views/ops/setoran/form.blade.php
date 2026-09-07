@@ -13,7 +13,7 @@
         @endif
         <div>
             <x-input-label for="santri_id" value="Santri" />
-            <select id="santri_id" name="santri_id" required class="mt-1.5 ui-input">
+            <select id="santri_id" name="santri_id" required class="mt-1.5 ui-input" @change="fillAyahStart()">
                 <option value="">Pilih santri</option>
                 @foreach ($members as $member)
                     <option value="{{ $member->santri_id }}" @selected(old('santri_id', $members->count() === 1 ? $members->first()->santri_id : null) == $member->santri_id)>
@@ -50,6 +50,7 @@
             <x-input-label for="ayah_start" value="Ayat awal" />
             <x-text-input id="ayah_start" type="number" min="1" name="ayah_start" class="mt-1.5"
                           x-bind:max="ayahMax"
+                          @unless ($isEdit) x-model="ayahStart" @endunless
                           :value="old('ayah_start', $setoran?->ayah_start)" required />
             <x-input-error class="mt-2" :messages="$errors->get('ayah_start')" />
         </div>

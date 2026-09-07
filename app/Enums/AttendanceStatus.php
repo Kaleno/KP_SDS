@@ -32,10 +32,10 @@ enum AttendanceStatus: string
     public function buttonClass(): string
     {
         return match ($this) {
-            self::Hadir => 'peer-checked:bg-teal-700 peer-checked:border-teal-700 peer-checked:text-white',
-            self::Izin => 'peer-checked:bg-amber-500 peer-checked:border-amber-500 peer-checked:text-white',
-            self::Sakit => 'peer-checked:bg-sky-600 peer-checked:border-sky-600 peer-checked:text-white',
-            self::Alfa => 'peer-checked:bg-rose-600 peer-checked:border-rose-600 peer-checked:text-white',
+            self::Hadir => 'ui-choice-hadir',
+            self::Izin => 'ui-choice-izin',
+            self::Sakit => 'ui-choice-sakit',
+            self::Alfa => 'ui-choice-alfa',
         };
     }
 }

@@ -38,6 +38,20 @@ class DashboardTest extends TestCase
             ->assertRedirect(route('login'));
     }
 
+    public function test_ketua_layout_renders_logout_inside_the_mobile_menu(): void
+    {
+        $ketua = User::factory()->create();
+        $ketua->assignRole(Role::Ketua);
+
+        $this->actingAs($ketua)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Menu')
+            ->assertSee('Profil')
+            ->assertSee('Keluar')
+            ->assertSee('data-nav="mobile-logout"', false);
+    }
+
     public function test_ketua_dashboard_shows_operational_today_summary(): void
     {
         $fx = $this->opsFixture();

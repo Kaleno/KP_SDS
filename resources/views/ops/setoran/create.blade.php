@@ -30,8 +30,25 @@
                 </p>
             @endif
             <form method="POST" action="{{ route('ops.setoran.store') }}" class="ui-card space-y-4 p-5"
-                  x-data="{ ayahMax: 286 }"
-                  @surah-picked.window="ayahMax = $event.detail.ayah">
+                  x-data="{
+                      ayahMax: 286,
+                      ayahStart: {{ \Illuminate\Support\Js::from(old('ayah_start', '')) }},
+                      nextAyahBySantri: {{ \Illuminate\Support\Js::from($nextAyahBySantri ?: new \stdClass) }},
+                      fillAyahStart(surahId = null, ayahCount = null) {
+                          if (ayahCount) {
+                              this.ayahMax = ayahCount;
+                          }
+                          const santriId = document.getElementById('santri_id')?.value;
+                          const sid = String(surahId ?? document.querySelector('[name=quran_surah_id]')?.value ?? '');
+                          if (! santriId || ! sid) {
+                              return;
+                          }
+                          const bySantri = this.nextAyahBySantri[santriId] ?? this.nextAyahBySantri[Number(santriId)] ?? {};
+                          const next = bySantri[sid] ?? bySantri[Number(sid)];
+                          this.ayahStart = next ?? 1;
+                      }
+                  }"
+                  @surah-picked.window="fillAyahStart($event.detail.id, $event.detail.ayah)">
                 @csrf
                 @include('ops.setoran.form')
                 <button type="submit" class="btn-primary btn-block min-h-14 text-base">

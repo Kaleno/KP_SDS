@@ -83,6 +83,132 @@ class OperasionalTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_attendance_session_page_renders_status_choice_styles(): void
+    {
+        $fx = $this->opsFixture();
+
+        $this->actingAs($fx['ustaz'])->post(route('ops.attendance.open', $fx['schedule']));
+        $session = AttendanceSession::query()->first();
+
+        $this->actingAs($fx['ustaz'])
+            ->get(route('ops.attendance.show', $session))
+            ->assertOk()
+            ->assertSee('attendance-picks', false)
+            ->assertSee('ui-choice-compact', false)
+            ->assertSee('ui-choice-hadir', false)
+            ->assertSee('ui-choice-izin', false)
+            ->assertSee('ui-choice-sakit', false)
+            ->assertSee('ui-choice-alfa', false)
+            ->assertSee('Hadir')
+            ->assertSee('Izin')
+            ->assertSee('Sakit')
+            ->assertSee('Alfa')
+            ->assertSee('+ Catatan');
+    }
+
+    public function test_setoran_index_renders_quick_filter_chips(): void
+    {
+        $fx = $this->opsFixture();
+
+        $this->actingAs($fx['ustaz'])
+            ->get(route('ops.setoran.index'))
+            ->assertOk()
+            ->assertSee('Hari ini')
+            ->assertSee('Minggu ini')
+            ->assertSee('Bulan ini')
+            ->assertSee('Lancar')
+            ->assertSee('Ulang')
+            ->assertSee('Perbaikan')
+            ->assertSee('Filter lain')
+            ->assertSee('aria-label="Rentang waktu"', false)
+            ->assertSee('aria-label="Status setoran"', false)
+            ->assertDontSee('Reset');
+    }
+
+    public function test_setoran_index_status_filter_hides_other_rows(): void
+    {
+        $fx = $this->opsFixture();
+        $this->seedFatihah();
+        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lancar);
+        $this->makeSetoran($fx, $fx['santri'][1], SetoranStatus::Ulang);
+
+        $this->actingAs($fx['ustaz'])
+            ->get(route('ops.setoran.index', ['status' => SetoranStatus::Ulang->value]))
+            ->assertOk()
+            ->assertSee('>Hasan Basri</p>', false)
+            ->assertDontSee('>Ahmad Fauzi</p>', false)
+            ->assertSee('Reset');
+    }
+
+    public function test_setoran_index_today_filter_hides_older_rows(): void
+    {
+        $this->travelTo('2026-09-07 08:00:00');
+
+        $fx = $this->opsFixture();
+        $this->seedFatihah();
+        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lancar, '2026-09-01');
+        $this->makeSetoran($fx, $fx['santri'][1], SetoranStatus::Lancar, '2026-09-07');
+
+        $this->actingAs($fx['ustaz'])
+            ->get(route('ops.setoran.index', [
+                'date_from' => '2026-09-07',
+                'date_to' => '2026-09-07',
+            ]))
+            ->assertOk()
+            ->assertSee('>Hasan Basri</p>', false)
+            ->assertDontSee('>Ahmad Fauzi</p>', false);
+    }
+
+    public function test_setoran_create_embeds_next_ayah_after_last_setoran(): void
+    {
+        $fx = $this->opsFixture();
+        $this->seedFatihah();
+        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lancar, ayahEnd: 5);
+        $this->makeSetoran($fx, $fx['santri'][1], SetoranStatus::Lancar, ayahEnd: 2);
+
+        $response = $this->actingAs($fx['ustaz'])
+            ->get(route('ops.setoran.create'))
+            ->assertOk()
+            ->assertSee('nextAyahBySantri', false)
+            ->assertSee('fillAyahStart', false);
+
+        $map = $response->viewData('nextAyahBySantri');
+        $this->assertSame(6, $map[$fx['santri'][0]->id][1]);
+        $this->assertSame(3, $map[$fx['santri'][1]->id][1]);
+        $this->assertArrayNotHasKey($fx['santri'][2]->id, $map);
+    }
+
+    public function test_setoran_create_uses_latest_setoran_for_next_ayah(): void
+    {
+        $this->travelTo('2026-09-07 08:00:00');
+
+        $fx = $this->opsFixture();
+        $this->seedFatihah();
+        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lancar, '2026-09-01', ayahEnd: 3);
+        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lancar, '2026-09-07', ayahEnd: 5);
+
+        $map = $this->actingAs($fx['ustaz'])
+            ->get(route('ops.setoran.create'))
+            ->assertOk()
+            ->viewData('nextAyahBySantri');
+
+        $this->assertSame(6, $map[$fx['santri'][0]->id][1]);
+    }
+
+    public function test_setoran_create_restarts_ayah_when_surah_is_complete(): void
+    {
+        $fx = $this->opsFixture();
+        $this->seedFatihah();
+        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lancar);
+
+        $map = $this->actingAs($fx['ustaz'])
+            ->get(route('ops.setoran.create'))
+            ->assertOk()
+            ->viewData('nextAyahBySantri');
+
+        $this->assertSame(1, $map[$fx['santri'][0]->id][1]);
+    }
+
     public function test_ustaz_can_store_setoran_and_correct_it(): void
     {
         $fx = $this->opsFixture();
@@ -244,6 +370,24 @@ class OperasionalTest extends TestCase
         $this->actingAs($admin)
             ->get(route('ops.attendance.index'))
             ->assertForbidden();
+    }
+
+    /**
+     * @param  array{ustaz: User, halaqah: Halaqah}  $fx
+     */
+    private function makeSetoran(array $fx, SantriProfile $santri, SetoranStatus $status, ?string $date = null, int $ayahEnd = 7): HafalanSetoran
+    {
+        return HafalanSetoran::query()->create([
+            'santri_id' => $santri->id,
+            'halaqah_id' => $fx['halaqah']->id,
+            'ustaz_user_id' => $fx['ustaz']->id,
+            'academic_year_id' => $fx['halaqah']->academic_year_id,
+            'quran_surah_id' => 1,
+            'setoran_date' => $date ?? now()->toDateString(),
+            'ayah_start' => 1,
+            'ayah_end' => $ayahEnd,
+            'status' => $status,
+        ]);
     }
 
     /**

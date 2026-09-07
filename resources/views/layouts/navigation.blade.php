@@ -43,8 +43,7 @@
     $roleName = $user->getRoleNames()->first();
     $grouped = collect($links)->groupBy('group');
     $primaryLinks = collect($links)->where('primary', true)->values();
-    $needsMore = collect($links)->contains(fn ($link) => ! $link['primary']);
-    $mobileCols = $needsMore ? 4 : min(4, $primaryLinks->count() + 1);
+    $mobileCols = min(4, $primaryLinks->take(3)->count() + 1);
     $moreActive = collect($links)->contains(fn ($link) => ! $link['primary'] && request()->routeIs($link['match']))
         || request()->routeIs('profile.*');
     $initials = collect(explode(' ', $user->name))->map(fn ($part) => mb_substr($part, 0, 1))->take(2)->implode('');
@@ -94,18 +93,12 @@
 </aside>
 
 <div class="lg:hidden fixed top-0 inset-x-0 z-30 px-3 pt-3">
-    <div class="flex items-center justify-between rounded-2xl bg-teal-950/95 px-3 py-2.5 text-white shadow-lift backdrop-blur">
-        <div class="flex items-center gap-2.5 min-w-0">
-            <x-application-logo class="h-9 w-9 shrink-0" />
-            <div class="min-w-0">
-                <p class="text-sm font-semibold truncate">Monitoring Hafalan</p>
-                <p class="text-[11px] text-teal-100/80 truncate">{{ $user->name }}</p>
-            </div>
+    <div class="flex items-center gap-2.5 rounded-2xl bg-teal-950/95 px-3 py-2.5 text-white shadow-lift backdrop-blur">
+        <x-application-logo class="h-9 w-9 shrink-0" />
+        <div class="min-w-0">
+            <p class="text-sm font-semibold truncate">Monitoring Hafalan</p>
+            <p class="text-[11px] text-teal-100/80 truncate">{{ $user->name }}</p>
         </div>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit" class="rounded-xl px-3 py-2 text-xs font-semibold text-teal-100 hover:bg-white/10">Keluar</button>
-        </form>
     </div>
 </div>
 
@@ -118,19 +111,11 @@
                 {{ $link['label'] }}
             </a>
         @endforeach
-        @if ($needsMore)
-            <button type="button" @click="menuOpen = true"
-                    class="flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] {{ $moreActive ? 'text-teal-800 font-semibold' : 'text-slate-500' }}">
-                <x-icon name="dots" class="h-5 w-5" />
-                Menu
-            </button>
-        @else
-            <a href="{{ route('profile.edit') }}"
-               class="flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] {{ request()->routeIs('profile.*') ? 'text-teal-800 font-semibold' : 'text-slate-500' }}">
-                <x-icon name="user" class="h-5 w-5" />
-                Profil
-            </a>
-        @endif
+        <button type="button" @click="menuOpen = true"
+                class="flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] {{ $moreActive ? 'text-teal-800 font-semibold' : 'text-slate-500' }}">
+            <x-icon name="dots" class="h-5 w-5" />
+            Menu
+        </button>
     </div>
 </nav>
 
@@ -146,7 +131,7 @@
          x-transition:leave-end="translate-y-full">
         <div class="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-300"></div>
         <p class="font-display text-lg text-teal-950">Menu</p>
-        <p class="text-sm text-slate-500 mb-4">{{ $roleName ? \App\Support\Role::label($roleName) : '' }}</p>
+        <p class="text-sm text-slate-500 mb-4">{{ $user->name }}{{ $roleName ? ' · '.\App\Support\Role::label($roleName) : '' }}</p>
         <div class="grid grid-cols-2 gap-2">
             @foreach ($links as $link)
                 <a href="{{ route($link['route']) }}"
@@ -161,6 +146,13 @@
                 Profil
             </a>
         </div>
-        <button type="button" class="btn-secondary btn-block mt-4" @click="menuOpen = false">Tutup</button>
+        <form method="POST" action="{{ route('logout') }}" class="mt-3" data-nav="mobile-logout">
+            @csrf
+            <button type="submit" class="btn-secondary btn-block">
+                <x-icon name="logout" class="h-4 w-4" />
+                Keluar
+            </button>
+        </form>
+        <button type="button" class="btn-ghost btn-block mt-2" @click="menuOpen = false">Tutup</button>
     </div>
 </div>

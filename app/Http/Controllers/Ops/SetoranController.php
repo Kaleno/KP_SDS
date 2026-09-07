@@ -14,6 +14,7 @@ use App\Models\SantriProfile;
 use App\Models\User;
 use App\Support\DateQuery;
 use App\Support\OperationalAccess;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -55,6 +56,21 @@ class SetoranController extends Controller
             $query->where('santri_id', $request->integer('santri_id'));
         }
 
+        $today = now()->toDateString();
+        $weekFrom = now()->copy()->startOfWeek(Carbon::MONDAY)->toDateString();
+        $monthFrom = now()->copy()->startOfMonth()->toDateString();
+        $activePeriod = 'all';
+        if ($from && $to) {
+            $activePeriod = match (true) {
+                $from === $today && $to === $today => 'today',
+                $from === $weekFrom && $to === $today => 'week',
+                $from === $monthFrom && $to === $today => 'month',
+                default => 'custom',
+            };
+        } elseif ($from || $to) {
+            $activePeriod = 'custom';
+        }
+
         $santriOptions = SantriProfile::query()
             ->with('user')
             ->whereIn('id', $this->access->guidedMemberQuery($user)->pluck('santri_id'))
@@ -73,6 +89,10 @@ class SetoranController extends Controller
                 'date_to' => $to ?? $request->input('date_to'),
                 'santri_id' => $request->input('santri_id'),
             ],
+            'activePeriod' => $activePeriod,
+            'today' => $today,
+            'weekFrom' => $weekFrom,
+            'monthFrom' => $monthFrom,
         ]);
     }
 
@@ -181,7 +201,42 @@ class SetoranController extends Controller
             'statuses' => SetoranStatus::cases(),
             'setoran' => $setoran,
             'session' => $session,
+            'nextAyahBySantri' => $setoran ? [] : $this->nextAyahBySantri($members->pluck('santri_id')),
         ];
+    }
+
+    /**
+     * @param  Collection<int, mixed>  $santriIds
+     * @return array<int, array<int, int>>
+     */
+    private function nextAyahBySantri(Collection $santriIds): array
+    {
+        $ids = $santriIds->map(fn ($id): int => (int) $id)->filter()->unique()->values();
+        if ($ids->isEmpty()) {
+            return [];
+        }
+
+        $latest = HafalanSetoran::query()
+            ->with(['surah:id,ayah_count'])
+            ->whereIn('santri_id', $ids)
+            ->orderByDesc('setoran_date')
+            ->orderByDesc('id')
+            ->get(['id', 'santri_id', 'quran_surah_id', 'ayah_end', 'setoran_date'])
+            ->unique(fn (HafalanSetoran $row): string => $row->santri_id.'-'.$row->quran_surah_id);
+
+        $map = [];
+        foreach ($latest as $row) {
+            $max = (int) $row->surah?->ayah_count;
+            if ($max < 1) {
+                continue;
+            }
+
+            $map[(int) $row->santri_id][(int) $row->quran_surah_id] = $row->ayah_end < $max
+                ? $row->ayah_end + 1
+                : 1;
+        }
+
+        return $map;
     }
 
     private function resolvedSession(Request $request): ?AttendanceSession

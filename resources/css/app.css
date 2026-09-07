@@ -139,9 +139,73 @@
         @apply ui-card-pad text-sm text-slate-600 text-center;
     }
 
+    .ui-segment {
+        @apply flex w-full rounded-xl bg-teal-950/[0.06] p-0.5;
+    }
+
+    .ui-segment > a {
+        @apply flex min-h-8 min-w-0 flex-1 items-center justify-center rounded-[10px] px-1 text-center text-[11px] font-semibold leading-tight text-slate-500 transition hover:text-teal-900;
+    }
+
+    .ui-segment > a.is-active {
+        @apply bg-white text-teal-950 shadow-sm;
+    }
+
+    .ui-filter-chip {
+        @apply inline-flex min-h-8 items-center rounded-lg px-2.5 text-[11px] font-semibold text-slate-500 transition hover:bg-teal-950/5 hover:text-teal-900;
+    }
+
+    .ui-filter-chip.is-lancar {
+        @apply bg-teal-50 text-teal-800;
+    }
+
+    .ui-filter-chip.is-ulang {
+        @apply bg-amber-50 text-amber-800;
+    }
+
+    .ui-filter-chip.is-perbaikan {
+        @apply bg-sky-50 text-sky-800;
+    }
+
     .ui-choice {
-        @apply flex items-center justify-center min-h-12 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 transition
+        @apply flex cursor-pointer items-center justify-center min-h-12 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 transition
             hover:border-teal-300 hover:bg-teal-50/60;
+    }
+
+    .attendance-picks {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        width: 100%;
+        gap: 0.25rem;
+    }
+
+    .attendance-picks .ui-choice {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .peer:checked + .ui-choice {
+        @apply border-teal-700 bg-teal-700 text-white hover:border-teal-800 hover:bg-teal-800;
+    }
+
+    .peer:checked + .ui-choice-hadir,
+    .peer:checked + .ui-choice-lancar {
+        @apply border-teal-700 bg-teal-700 text-white hover:border-teal-800 hover:bg-teal-800;
+    }
+
+    .peer:checked + .ui-choice-izin,
+    .peer:checked + .ui-choice-ulang {
+        @apply border-amber-500 bg-amber-500 text-white hover:border-amber-600 hover:bg-amber-600;
+    }
+
+    .peer:checked + .ui-choice-sakit,
+    .peer:checked + .ui-choice-perbaikan {
+        @apply border-sky-600 bg-sky-600 text-white hover:border-sky-700 hover:bg-sky-700;
+    }
+
+    .peer:checked + .ui-choice-alfa {
+        @apply border-rose-600 bg-rose-600 text-white hover:border-rose-700 hover:bg-rose-700;
     }
 
     .nav-item {

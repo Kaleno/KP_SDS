@@ -29,9 +29,9 @@ enum SetoranStatus: string
     public function buttonClass(): string
     {
         return match ($this) {
-            self::Lancar => 'peer-checked:bg-teal-700 peer-checked:border-teal-700 peer-checked:text-white',
-            self::Ulang => 'peer-checked:bg-amber-500 peer-checked:border-amber-500 peer-checked:text-white',
-            self::Perbaikan => 'peer-checked:bg-sky-600 peer-checked:border-sky-600 peer-checked:text-white',
+            self::Lancar => 'ui-choice-lancar',
+            self::Ulang => 'ui-choice-ulang',
+            self::Perbaikan => 'ui-choice-perbaikan',
         };
     }
 }
