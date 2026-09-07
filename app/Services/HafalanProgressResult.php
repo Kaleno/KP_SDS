@@ -37,4 +37,33 @@ final class HafalanProgressResult
 
         return null;
     }
+
+    public function currentJuz(): ?JuzProgress
+    {
+        $inProgress = null;
+        $lastComplete = null;
+
+        foreach ($this->juz as $bar) {
+            if ($bar->percent >= 100) {
+                $lastComplete = $bar;
+            } elseif ($bar->lancarCount > 0) {
+                $inProgress = $bar;
+            }
+        }
+
+        return $inProgress ?? $lastComplete ?? ($this->juz[0] ?? null);
+    }
+
+    public function completedJuzCount(): int
+    {
+        $count = 0;
+
+        foreach ($this->juz as $bar) {
+            if ($bar->percent >= 100) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
 }

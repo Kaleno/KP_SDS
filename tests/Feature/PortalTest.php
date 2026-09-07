@@ -62,6 +62,8 @@ class PortalTest extends TestCase
         $this->actingAs($parent)
             ->get(route('portal.home', ['anak' => $fx['santri'][0]->id]))
             ->assertOk()
+            ->assertSee('Pilih anak')
+            ->assertSee('Dipantau')
             ->assertSee('Ahmad Fauzi')
             ->assertSee('4.73%')
             ->assertSee('Hasan Basri');
@@ -122,7 +124,29 @@ class PortalTest extends TestCase
             ->get(route('portal.home'))
             ->assertOk()
             ->assertSee('Hadir')
+            ->assertSee('Hadir di halaqah')
+            ->assertSee('Hari ini')
+            ->assertSee('07:00')
+            ->assertSee('Masjid Utama')
             ->assertSee('Jadwal halaqah');
+    }
+
+    public function test_portal_explains_ulang_setoran_in_plain_language(): void
+    {
+        $fx = $this->portalFixture();
+        $this->seed(QuranSeeder::class);
+        $this->storeFatihah($fx, $fx['santri'][0], SetoranStatus::Ulang);
+
+        $this->actingAs($fx['santri'][0]->user)
+            ->get(route('portal.home'))
+            ->assertOk()
+            ->assertSee('Al-Fatihah')
+            ->assertSee('Ulang')
+            ->assertSee('Perlu diulang')
+            ->assertSee('pertemuan berikutnya')
+            ->assertSee('Peta 30 juz')
+            ->assertDontSee('Input setoran')
+            ->assertDontSee('Simpan setoran');
     }
 
     /**

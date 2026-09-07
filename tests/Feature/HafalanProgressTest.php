@@ -42,6 +42,8 @@ class HafalanProgressTest extends TestCase
         $this->assertSame(4.73, $first->juz(1)->percent);
         $this->assertSame(0.11, $first->totalPercent);
         $this->assertSame(0, $first->juz(2)->lancarCount);
+        $this->assertSame(1, $first->currentJuz()?->number);
+        $this->assertSame(0, $first->completedJuzCount());
 
         $this->storeSetoran($fx, $fx['santri'], 1, 1, 7, SetoranStatus::Lancar, now()->addDay()->toDateString());
         $second = $service->forSantri($fx['santri'], $fx['year']);

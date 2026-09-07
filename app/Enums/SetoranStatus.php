@@ -17,6 +17,15 @@ enum SetoranStatus: string
         };
     }
 
+    public function hint(): string
+    {
+        return match ($this) {
+            self::Lancar => 'Hafalan diterima pengajar',
+            self::Ulang => 'Perlu diulang di pertemuan berikutnya',
+            self::Perbaikan => 'Perlu diperbaiki di pertemuan berikutnya',
+        };
+    }
+
     public function buttonClass(): string
     {
         return match ($this) {
