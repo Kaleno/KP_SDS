@@ -26,7 +26,7 @@ class StoreHalaqahRequest extends FormRequest
             'ustaz_user_id' => [
                 'required',
                 Rule::exists('users', 'id')->where(function ($query) {
-                    $query->whereIn('id', User::role(Role::Ustaz)->pluck('id'));
+                    $query->whereIn('id', User::role(Role::teaching())->pluck('id'));
                 }),
             ],
             'is_active' => ['required', 'boolean'],

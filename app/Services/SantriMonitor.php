@@ -15,7 +15,10 @@ use Illuminate\Support\Collection;
 
 class SantriMonitor
 {
-    public function __construct(private HafalanProgress $progress) {}
+    public function __construct(
+        private HafalanProgress $progress,
+        private SppService $spp,
+    ) {}
 
     /**
      * @return array{
@@ -90,10 +93,13 @@ class SantriMonitor
         $today = now()->toDateString();
         $day = now()->isoWeekday();
         $latestSetoran = $setoran->first();
-        $needsFollowUp = $latestSetoran && in_array($latestSetoran->status, [SetoranStatus::Ulang, SetoranStatus::Perbaikan], true)
+        $needsFollowUp = $latestSetoran && $latestSetoran->status === SetoranStatus::Mengulang
             ? $latestSetoran
             : null;
         $attendanceCounts = $this->attendanceCounts($santri, $year);
+        $payments = $this->spp->historyFor($santri, 6);
+        $currentPayment = $payments[0] ?? null;
+        $unpaidMonths = $this->spp->unpaidMonthCount($santri);
 
         return [
             'santri' => $santri,
@@ -103,6 +109,10 @@ class SantriMonitor
             'attendances' => $attendances,
             'membership' => $membership,
             'schedules' => $schedules,
+            'payments' => $payments,
+            'currentPayment' => $currentPayment,
+            'sppAmount' => $this->spp->monthlyAmount(),
+            'unpaidMonths' => $unpaidMonths,
             'snapshot' => [
                 'dayLabel' => WeekDay::label($day),
                 'todayLabel' => now()->format('d/m/Y'),

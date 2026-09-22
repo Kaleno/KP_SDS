@@ -38,6 +38,19 @@ class DashboardTest extends TestCase
             ->assertRedirect(route('login'));
     }
 
+    public function test_authenticated_layout_renders_masjid_branding(): void
+    {
+        $ketua = User::factory()->create();
+        $ketua->assignRole(Role::Ketua);
+
+        $this->actingAs($ketua)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Masjid Al Ihsan')
+            ->assertSee('images/logo-masjid-al-ihsan.png', false)
+            ->assertDontSee('Monitoring Hafalan');
+    }
+
     public function test_ketua_layout_renders_logout_inside_the_mobile_menu(): void
     {
         $ketua = User::factory()->create();
@@ -52,6 +65,19 @@ class DashboardTest extends TestCase
             ->assertSee('data-nav="mobile-logout"', false);
     }
 
+    public function test_ketua_layout_locks_the_sidebar_and_scrolls_the_content_pane(): void
+    {
+        $ketua = User::factory()->create();
+        $ketua->assignRole(Role::Ketua);
+
+        $this->actingAs($ketua)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('lg:h-screen lg:overflow-hidden', false)
+            ->assertSee('ui-content-scroll', false)
+            ->assertSee('x-ref="sidebarNav"', false);
+    }
+
     public function test_ketua_dashboard_shows_operational_today_summary(): void
     {
         $fx = $this->opsFixture();
@@ -60,7 +86,7 @@ class DashboardTest extends TestCase
         $this->actingAs($fx['ketua'])
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Halaqah aktif')
+            ->assertSee('Kelas aktif')
             ->assertSee('Santri aktif')
             ->assertSee('Setoran hari ini')
             ->assertSee('Alfa hari ini')
@@ -79,7 +105,7 @@ class DashboardTest extends TestCase
             ->assertSee('Minggu ini')
             ->assertSee('Rekap minggu ini')
             ->assertSee('Alfa minggu ini')
-            ->assertDontSee('Halaqah belum siap dipakai');
+            ->assertDontSee('Kelas belum siap dipakai');
     }
 
     public function test_ustaz_dashboard_shows_their_halaqah_activity(): void
@@ -94,7 +120,7 @@ class DashboardTest extends TestCase
             ->assertSee('Sesi hari ini')
             ->assertSee('Setoran hari ini')
             ->assertSee('Alfa hari ini')
-            ->assertSee('Halaqah Anda')
+            ->assertSee('Kelas Anda')
             ->assertSee('Halaqah Tahfidz A')
             ->assertSee('07:00')
             ->assertSee('Yusuf Maulana')
@@ -109,9 +135,9 @@ class DashboardTest extends TestCase
         $this->actingAs($ketua)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Halaqah belum siap dipakai')
-            ->assertSee('Tahun ajaran aktif')
-            ->assertSee('Siapkan halaqah')
+            ->assertSee('Kelas belum siap dipakai')
+            ->assertSee('Akun pengajar')
+            ->assertSee('Buat kelas')
             ->assertSee('Minggu ini');
     }
 
@@ -119,7 +145,7 @@ class DashboardTest extends TestCase
     {
         $fx = $this->opsFixture();
         $this->seedTodayActivity($fx);
-        $outsider = $this->userWithRole(Role::Ustaz, ['username' => 'ustaz2']);
+        $outsider = $this->userWithRole(Role::Pengajar, ['username' => 'ustaz2']);
 
         $this->actingAs($outsider)
             ->get(route('dashboard'))
@@ -135,7 +161,7 @@ class DashboardTest extends TestCase
     private function opsFixture(): array
     {
         $ketua = $this->userWithRole(Role::Ketua);
-        $ustaz = $this->userWithRole(Role::Ustaz, ['username' => 'ustaz1', 'name' => 'Ustaz Ahmad']);
+        $ustaz = $this->userWithRole(Role::KetuaPengajar, ['username' => 'ustaz1', 'name' => 'Ustaz Ahmad']);
         $year = AcademicYear::query()->create([
             'name' => '2026/2027',
             'start_date' => '2026-07-01',
@@ -210,7 +236,7 @@ class DashboardTest extends TestCase
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 7,
-            'status' => SetoranStatus::Lancar,
+            'status' => SetoranStatus::Lulus,
         ]);
         HafalanSetoran::query()->create([
             'santri_id' => $fx['santri'][1]->id,
@@ -221,7 +247,7 @@ class DashboardTest extends TestCase
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 7,
-            'status' => SetoranStatus::Ulang,
+            'status' => SetoranStatus::Mengulang,
         ]);
     }
 

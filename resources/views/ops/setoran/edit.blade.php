@@ -9,7 +9,10 @@
 
     <div class="max-w-lg">
         <form method="POST" action="{{ route('ops.setoran.update', $setoran) }}" class="ui-card space-y-4 p-5"
-              x-data="{ ayahMax: {{ $setoran->surah->ayah_count ?? 286 }} }"
+              x-data="{
+                  track: '{{ $setoran->iqro_level ? 'iqro' : 'alquran' }}',
+                  ayahMax: {{ $setoran->surah->ayah_count ?? 286 }}
+              }"
               @surah-picked.window="ayahMax = $event.detail.ayah">
             @csrf
             @method('PUT')

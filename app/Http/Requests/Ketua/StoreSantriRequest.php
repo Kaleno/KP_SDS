@@ -4,6 +4,8 @@ namespace App\Http\Requests\Ketua;
 
 use App\Enums\Gender;
 use App\Enums\SantriStatus;
+use App\Enums\SantriTrack;
+use App\Enums\SchoolLevel;
 use App\Models\SantriProfile;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -30,6 +32,9 @@ class StoreSantriRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:30'],
             'gender' => ['required', Rule::enum(Gender::class)],
             'birth_date' => ['nullable', 'date'],
+            'parent_name' => ['nullable', 'string', 'max:255'],
+            'school_level' => ['nullable', Rule::enum(SchoolLevel::class)],
+            'track' => ['required', Rule::enum(SantriTrack::class)],
             'status' => ['required', Rule::enum(SantriStatus::class)],
             'password' => ['required', 'confirmed', Password::defaults()],
         ];

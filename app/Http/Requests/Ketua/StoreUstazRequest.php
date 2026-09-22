@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Ketua;
 
 use App\Models\User;
+use App\Support\Role;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
@@ -25,6 +26,7 @@ class StoreUstazRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255', 'unique:'.User::class],
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['required', 'confirmed', Password::defaults()],
+            'teaching_role' => ['required', 'in:'.Role::KetuaPengajar.','.Role::Pengajar],
         ];
     }
 }

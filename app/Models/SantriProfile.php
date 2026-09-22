@@ -4,14 +4,28 @@ namespace App\Models;
 
 use App\Enums\Gender;
 use App\Enums\SantriStatus;
+use App\Enums\SantriTrack;
+use App\Enums\SchoolLevel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['user_id', 'nis', 'gender', 'birth_date', 'status'])]
+#[Fillable([
+    'user_id',
+    'nis',
+    'parent_name',
+    'school_level',
+    'track',
+    'iqro_level',
+    'photo_path',
+    'gender',
+    'birth_date',
+    'status',
+])]
 class SantriProfile extends Model
 {
     /**
@@ -22,7 +36,10 @@ class SantriProfile extends Model
         return [
             'gender' => Gender::class,
             'status' => SantriStatus::class,
+            'school_level' => SchoolLevel::class,
+            'track' => SantriTrack::class,
             'birth_date' => 'date',
+            'iqro_level' => 'integer',
         ];
     }
 
@@ -74,5 +91,10 @@ class SantriProfile extends Model
     public function scopeAktif(Builder $query): Builder
     {
         return $query->where('status', SantriStatus::Aktif);
+    }
+
+    public function photoUrl(): ?string
+    {
+        return $this->photo_path ? Storage::disk('public')->url($this->photo_path) : null;
     }
 }

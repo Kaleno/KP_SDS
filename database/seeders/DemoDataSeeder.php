@@ -4,7 +4,10 @@ namespace Database\Seeders;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\Gender;
+use App\Enums\RegistrationStatus;
 use App\Enums\SantriStatus;
+use App\Enums\SantriTrack;
+use App\Enums\SchoolLevel;
 use App\Enums\SetoranStatus;
 use App\Models\AcademicYear;
 use App\Models\Attendance;
@@ -14,8 +17,10 @@ use App\Models\Halaqah;
 use App\Models\HalaqahMember;
 use App\Models\Location;
 use App\Models\SantriProfile;
+use App\Models\SantriRegistration;
 use App\Models\Schedule;
 use App\Models\User;
+use App\Support\AppSettings;
 use App\Support\Role;
 use Illuminate\Database\Seeder;
 
@@ -41,18 +46,32 @@ class DemoDataSeeder extends Seeder
         $ustaz = User::query()->updateOrCreate(
             ['username' => 'ustaz1'],
             [
-                'name' => 'Ustaz Ahmad',
+                'name' => 'Ahmad',
                 'email' => 'ustaz1@kp-sds.test',
                 'password' => 'password',
                 'is_active' => true,
             ],
         );
-        $ustaz->syncRoles([Role::Ustaz]);
+        $ustaz->syncRoles([Role::KetuaPengajar]);
+
+        $pengajar = User::query()->updateOrCreate(
+            ['username' => 'pengajar1'],
+            [
+                'name' => 'Budi',
+                'email' => 'pengajar1@kp-sds.test',
+                'password' => 'password',
+                'is_active' => true,
+            ],
+        );
+        $pengajar->syncRoles([Role::Pengajar]);
+
+        User::query()->where('username', 'ketua')->update(['name' => 'Ketua DKM']);
 
         $santriData = [
-            ['nis' => '2026001', 'name' => 'Ahmad Fauzi', 'gender' => Gender::LakiLaki],
-            ['nis' => '2026002', 'name' => 'Hasan Basri', 'gender' => Gender::LakiLaki],
-            ['nis' => '2026003', 'name' => 'Yusuf Maulana', 'gender' => Gender::LakiLaki],
+            ['nis' => '2026001', 'name' => 'Ahmad Fauzi', 'gender' => Gender::LakiLaki, 'track' => 'alquran'],
+            ['nis' => '2026002', 'name' => 'Hasan Basri', 'gender' => Gender::LakiLaki, 'track' => 'alquran'],
+            ['nis' => '2026003', 'name' => 'Yusuf Maulana', 'gender' => Gender::LakiLaki, 'track' => 'alquran'],
+            ['nis' => '2026004', 'name' => 'Siti Aisyah', 'gender' => Gender::Perempuan, 'track' => 'iqro'],
         ];
 
         $profiles = collect($santriData)->map(function (array $row) {
@@ -73,22 +92,13 @@ class DemoDataSeeder extends Seeder
                     'user_id' => $user->id,
                     'gender' => $row['gender'],
                     'birth_date' => '2012-01-15',
+                    'parent_name' => 'Orang Tua Demo',
+                    'school_level' => 'sd',
+                    'track' => $row['track'],
                     'status' => SantriStatus::Aktif,
                 ],
             );
         });
-
-        $parent = User::query()->updateOrCreate(
-            ['username' => 'ortu1'],
-            [
-                'name' => 'Bapak Abdullah',
-                'email' => 'ortu1@kp-sds.test',
-                'password' => 'password',
-                'is_active' => true,
-            ],
-        );
-        $parent->syncRoles([Role::OrangTua]);
-        $parent->children()->sync($profiles->take(2)->pluck('id')->all());
 
         $halaqah = Halaqah::query()->updateOrCreate(
             [
@@ -164,7 +174,7 @@ class DemoDataSeeder extends Seeder
                 'quran_surah_id' => 1,
                 'ayah_start' => 1,
                 'ayah_end' => 7,
-                'status' => SetoranStatus::Lancar,
+                'status' => SetoranStatus::Lulus,
                 'setoran_date' => $today,
             ],
             [
@@ -181,7 +191,7 @@ class DemoDataSeeder extends Seeder
                 'quran_surah_id' => 1,
                 'ayah_start' => 1,
                 'ayah_end' => 7,
-                'status' => SetoranStatus::Ulang,
+                'status' => SetoranStatus::Mengulang,
                 'setoran_date' => $today,
             ],
             [
@@ -217,5 +227,25 @@ class DemoDataSeeder extends Seeder
                 );
             }
         }
+
+        AppSettings::setSppMonthlyAmount(AppSettings::DefaultSppMonthlyAmount);
+
+        SantriRegistration::query()->updateOrCreate(
+            [
+                'name' => 'Fatimah Zahra',
+                'parent_name' => 'Pak Hasan',
+                'birth_date' => '2014-05-20',
+            ],
+            [
+                'school_level' => SchoolLevel::Sd,
+                'gender' => Gender::Perempuan,
+                'track' => SantriTrack::Iqro,
+                'status' => RegistrationStatus::Pending,
+                'rejection_note' => null,
+                'reviewed_by' => null,
+                'reviewed_at' => null,
+                'santri_id' => null,
+            ],
+        );
     }
 }

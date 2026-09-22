@@ -17,6 +17,32 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_login_screen_renders_masjid_branding(): void
+    {
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('Taman Pendidikan Al-Qur\'an', false)
+            ->assertSee('Masjid Al Ihsan')
+            ->assertSee('Pembelajaran Iqro, Alquran dan Hafalan')
+            ->assertSee('Progress 30 juz dihitung dari ayat yang sudah lancar.')
+            ->assertSee('images/logo-masjid-al-ihsan.png', false)
+            ->assertDontSee('Pesantren / Madrasah')
+            ->assertDontSee('Monitoring Hafalan')
+            ->assertDontSee('Absensi, setoran, dan jadwal santri')
+            ->assertDontSee('Penilaian Lulus / Mengulang untuk Alquran dan Iqro.')
+            ->assertDontSee('Progress 30 juz dihitung dari ayat unik yang sudah lancar.');
+    }
+
+    public function test_login_screen_renders_password_visibility_toggle(): void
+    {
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('ui-password', false)
+            ->assertSee('ui-password-toggle', false)
+            ->assertSee('Tampilkan kata sandi', false)
+            ->assertSee('Sembunyikan kata sandi', false);
+    }
+
     public function test_users_can_authenticate_using_username(): void
     {
         $user = User::factory()->create();

@@ -2,12 +2,20 @@
     <x-slot name="header">
         <div>
             <p class="ui-section-title">Pengajar</p>
-            <h1 class="font-display text-2xl font-semibold text-teal-950">Tambah ustaz</h1>
+            <h1 class="font-display text-2xl font-semibold text-teal-950">Tambah pengajar</h1>
         </div>
     </x-slot>
 
     <form method="POST" action="{{ route('ketua.ustaz.store') }}" class="max-w-xl ui-card p-5 sm:p-6 grid gap-4">
         @csrf
+        <div>
+            <x-input-label for="teaching_role" value="Jenis akun" />
+            <select id="teaching_role" name="teaching_role" class="ui-select mt-1.5" required>
+                <option value="{{ \App\Support\Role::KetuaPengajar }}" @selected(old('teaching_role') === \App\Support\Role::KetuaPengajar)>Ketua Pengajar</option>
+                <option value="{{ \App\Support\Role::Pengajar }}" @selected(old('teaching_role', \App\Support\Role::Pengajar) === \App\Support\Role::Pengajar)>Pengajar</option>
+            </select>
+            <x-input-error class="mt-2" :messages="$errors->get('teaching_role')" />
+        </div>
         <div>
             <x-input-label for="name" value="Nama" />
             <x-text-input id="name" name="name" class="mt-1.5" :value="old('name')" required />

@@ -36,7 +36,7 @@
                 </div>
             @empty
                 <x-empty>
-                    Tidak ada slot jadwal untuk {{ $dayLabel }}. Minta Ketua menambahkan jadwal halaqah di hari ini.
+                    Tidak ada slot jadwal untuk {{ $dayLabel }}. Minta Ketua menambahkan jadwal kelas di hari ini.
                 </x-empty>
             @endforelse
         </section>

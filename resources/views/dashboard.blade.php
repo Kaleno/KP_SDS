@@ -4,7 +4,6 @@
             <div>
                 <p class="ui-section-title">{{ $roleLabel }}</p>
                 <h1 class="font-display text-2xl font-semibold text-teal-950">Beranda</h1>
-                <p class="text-sm text-slate-500">Masuk sebagai {{ $roleLabel }}</p>
             </div>
             @if ($overview)
                 <p class="text-sm text-slate-500">{{ $overview['dayLabel'] }}, {{ $overview['todayLabel'] }}</p>
@@ -22,18 +21,15 @@
                 @if ($isSuperAdmin)
                     Pemelihara teknis sistem. Kelola akun Ketua, lalu serahkan operasional harian kepada pimpinan.
                 @elseif ($isKetua)
-                    Ringkasan hari ini untuk pimpinan: sesi, kehadiran, setoran, dan halaqah yang perlu perhatian.
+                    Ringkasan hari ini: sesi, kehadiran, setoran, dan kelas yang perlu perhatian.
                 @elseif ($isUstaz)
                     Fokus ke sesi hari ini: buka absensi, catat setoran, lalu tindaklanjuti santri yang belum lancar.
                 @else
-                    Akun Anda sudah aktif. Portal pantau santri dan orang tua menyusul setelah operasional harian dipakai.
+                    Akun Anda sudah aktif.
                 @endif
             </p>
-            @if ($overview)
-                <p class="mt-4 text-xs text-teal-100/70">
-                    {{ $overview['year']?->name ?? 'Belum ada tahun ajaran aktif' }}
-                    · {{ $overview['dayLabel'] }} {{ $overview['todayLabel'] }}
-                </p>
+            @if (! empty($overview['year']))
+                <p class="mt-4 text-xs text-teal-100/70">{{ $overview['year']->name }}</p>
             @endif
         </div>
 

@@ -376,7 +376,7 @@ class OperationalDashboard
             ->with(['santri.user', 'surah', 'halaqah'])
             ->whereIn('halaqah_id', $halaqahIds)
             ->whereDate('setoran_date', $today)
-            ->whereIn('status', [SetoranStatus::Ulang, SetoranStatus::Perbaikan])
+            ->whereIn('status', [SetoranStatus::Mengulang, SetoranStatus::Mengulang])
             ->when($year, fn ($query) => $query->where('academic_year_id', $year->id))
             ->orderByDesc('id')
             ->limit(6)

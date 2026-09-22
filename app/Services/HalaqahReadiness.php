@@ -2,10 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\AcademicYear;
-use App\Models\Halaqah;
-use App\Models\HalaqahMember;
-use App\Models\Location;
 use App\Models\SantriProfile;
 use App\Models\Schedule;
 use App\Models\User;
@@ -18,18 +14,15 @@ class HalaqahReadiness
      */
     public function snapshot(): array
     {
-        $year = AcademicYear::query()->aktif()->first();
+        $hasSchedule = Schedule::query()
+            ->where('is_active', true)
+            ->whereHas('halaqah', fn ($query) => $query->aktif())
+            ->exists();
+
         $checks = [
-            ['key' => 'year', 'label' => 'Tahun ajaran aktif', 'done' => $year !== null],
-            ['key' => 'location', 'label' => 'Lokasi pertemuan', 'done' => Location::query()->exists()],
-            ['key' => 'ustaz', 'label' => 'Akun pengajar', 'done' => User::query()->role(Role::Ustaz)->where('is_active', true)->exists()],
+            ['key' => 'ustaz', 'label' => 'Akun pengajar', 'done' => User::query()->role(Role::teaching())->where('is_active', true)->exists()],
             ['key' => 'santri', 'label' => 'Santri aktif', 'done' => SantriProfile::query()->aktif()->exists()],
-            ['key' => 'halaqah', 'label' => 'Halaqah aktif', 'done' => $year !== null && Halaqah::query()->aktif()->where('academic_year_id', $year->id)->exists()],
-            ['key' => 'members', 'label' => 'Anggota halaqah', 'done' => $year !== null && HalaqahMember::query()->aktif()->where('academic_year_id', $year->id)->exists()],
-            ['key' => 'schedule', 'label' => 'Jadwal mingguan', 'done' => $year !== null && Schedule::query()
-                ->where('is_active', true)
-                ->whereHas('halaqah', fn ($query) => $query->aktif()->where('academic_year_id', $year->id))
-                ->exists()],
+            ['key' => 'kelas', 'label' => 'Kelas dengan jadwal', 'done' => $hasSchedule],
         ];
 
         return [

@@ -24,7 +24,7 @@ class AdminUserSeeder extends Seeder
         $ketua = User::query()->updateOrCreate(
             ['username' => env('SEED_KETUA_USERNAME', 'ketua')],
             [
-                'name' => 'Ketua / Mudir',
+                'name' => 'Ketua DKM',
                 'email' => env('SEED_KETUA_EMAIL', 'ketua@kp-sds.test'),
                 'password' => env('SEED_KETUA_PASSWORD', 'password'),
                 'is_active' => true,

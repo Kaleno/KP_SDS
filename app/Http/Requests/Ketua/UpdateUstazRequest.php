@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Ketua;
 
 use App\Models\User;
+use App\Support\Role;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -28,6 +29,7 @@ class UpdateUstazRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255', Rule::unique(User::class)->ignore($ustaz)],
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['nullable', 'confirmed', Password::defaults()],
+            'teaching_role' => ['required', 'in:'.Role::KetuaPengajar.','.Role::Pengajar],
         ];
     }
 }

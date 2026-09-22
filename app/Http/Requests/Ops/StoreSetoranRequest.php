@@ -2,8 +2,12 @@
 
 namespace App\Http\Requests\Ops;
 
+use App\Enums\SantriTrack;
 use App\Enums\SetoranStatus;
+use App\Models\QuranJuz;
 use App\Models\QuranSurah;
+use App\Models\SantriProfile;
+use App\Services\OperationalCalendar;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -21,22 +25,37 @@ class StoreSetoranRequest extends FormRequest
      */
     public function rules(): array
     {
+        $santri = SantriProfile::query()->find($this->input('santri_id'));
+        $isIqro = $santri?->track === SantriTrack::Iqro;
+
         return [
             'santri_id' => ['required', 'exists:santri_profiles,id'],
-            'quran_surah_id' => ['required', 'exists:quran_surahs,id'],
             'setoran_date' => ['required', 'date'],
-            'ayah_start' => ['required', 'integer', 'min:1'],
-            'ayah_end' => ['required', 'integer', 'gte:ayah_start'],
             'status' => ['required', Rule::enum(SetoranStatus::class)],
             'note' => ['nullable', 'string', 'max:500'],
             'sesi' => ['nullable', 'integer', 'exists:attendance_sessions,id'],
+            'quran_surah_id' => [$isIqro ? 'nullable' : 'required', 'exists:quran_surahs,id'],
+            'ayah_start' => [$isIqro ? 'nullable' : 'required', 'integer', 'min:1'],
+            'ayah_end' => [$isIqro ? 'nullable' : 'required', 'integer', 'gte:ayah_start'],
+            'iqro_level' => [$isIqro ? 'required' : 'nullable', 'integer', 'min:1', 'max:6'],
+            'iqro_page' => [$isIqro ? 'required' : 'nullable', 'integer', 'min:1', 'max:100'],
         ];
     }
 
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            $santri = SantriProfile::query()->find($this->input('santri_id'));
+            if (! $santri) {
+                return;
+            }
+
+            if ($santri->track === SantriTrack::Iqro) {
+                return;
+            }
+
             $this->assertAyahWithinSurah($validator);
+            $this->assertFridayJuz30($validator);
         });
     }
 
@@ -58,6 +77,27 @@ class StoreSetoranRequest extends FormRequest
             $validator->errors()->add(
                 'ayah_end',
                 "Ayat akhir melebihi jumlah ayat {$surah->name_id} ({$surah->ayah_count}).",
+            );
+        }
+    }
+
+    protected function assertFridayJuz30(Validator $validator): void
+    {
+        $date = $this->date('setoran_date');
+        if (! $date || ! app(OperationalCalendar::class)->isFriday($date)) {
+            return;
+        }
+
+        $juz = QuranJuz::query()->find(30);
+        if (! $juz) {
+            return;
+        }
+
+        $surahId = (int) $this->input('quran_surah_id');
+        if ($surahId < (int) $juz->start_surah_id || $surahId > (int) $juz->end_surah_id) {
+            $validator->errors()->add(
+                'quran_surah_id',
+                'Hari Jumat untuk jalur Alquran hanya setoran hafalan juz 30.',
             );
         }
     }

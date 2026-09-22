@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Ketua;
 
-use App\Http\Requests\Ketua\StoreHalaqahMemberRequest;
 use App\Http\Requests\Ketua\MutateHalaqahMemberRequest;
+use App\Http\Requests\Ketua\StoreHalaqahMemberRequest;
 use App\Models\Halaqah;
 use App\Models\HalaqahMember;
 use App\Models\SantriProfile;
@@ -33,7 +33,7 @@ class HalaqahMemberController extends KetuaController
         );
 
         return redirect()
-            ->route('ketua.halaqah.show', $target)
+            ->route('ketua.halaqah.edit', $target)
             ->with('status', "Santri dipindahkan ke {$target->name}.");
     }
 

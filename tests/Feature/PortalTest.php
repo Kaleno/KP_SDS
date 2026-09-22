@@ -36,7 +36,7 @@ class PortalTest extends TestCase
     {
         $fx = $this->portalFixture();
         $this->seed(QuranSeeder::class);
-        $this->storeFatihah($fx, $fx['santri'][0], SetoranStatus::Lancar);
+        $this->storeFatihah($fx, $fx['santri'][0], SetoranStatus::Lulus);
 
         $this->actingAs($fx['santri'][0]->user)
             ->get(route('portal.home'))
@@ -49,47 +49,7 @@ class PortalTest extends TestCase
             ->assertDontSee('Simpan setoran');
     }
 
-    public function test_parent_can_switch_linked_children_but_not_unlinked(): void
-    {
-        $fx = $this->portalFixture();
-        $this->seed(QuranSeeder::class);
-        $this->storeFatihah($fx, $fx['santri'][0], SetoranStatus::Lancar);
-        $this->storeFatihah($fx, $fx['santri'][1], SetoranStatus::Ulang);
-
-        $parent = $this->userWithRole(Role::OrangTua, ['username' => 'ortu1', 'name' => 'Bapak Abdullah']);
-        $parent->children()->sync([$fx['santri'][0]->id, $fx['santri'][1]->id]);
-
-        $this->actingAs($parent)
-            ->get(route('portal.home', ['anak' => $fx['santri'][0]->id]))
-            ->assertOk()
-            ->assertSee('Pilih anak')
-            ->assertSee('Dipantau')
-            ->assertSee('Ahmad Fauzi')
-            ->assertSee('4.73%')
-            ->assertSee('Hasan Basri');
-
-        $this->actingAs($parent)
-            ->get(route('portal.home', ['anak' => $fx['santri'][1]->id]))
-            ->assertOk()
-            ->assertSee('Hasan Basri')
-            ->assertSee('Ulang');
-
-        $this->actingAs($parent)
-            ->get(route('portal.home', ['anak' => $fx['santri'][2]->id]))
-            ->assertForbidden();
-    }
-
-    public function test_other_parent_cannot_see_unlinked_child(): void
-    {
-        $fx = $this->portalFixture();
-        $outsider = $this->userWithRole(Role::OrangTua, ['username' => 'ortu2']);
-
-        $this->actingAs($outsider)
-            ->get(route('portal.home', ['anak' => $fx['santri'][0]->id]))
-            ->assertForbidden();
-    }
-
-    public function test_santri_cannot_open_ops_or_other_child_query(): void
+    public function test_santri_cannot_open_ops(): void
     {
         $fx = $this->portalFixture();
 
@@ -99,10 +59,6 @@ class PortalTest extends TestCase
 
         $this->actingAs($fx['santri'][0]->user)
             ->post(route('ops.setoran.store'), [])
-            ->assertForbidden();
-
-        $this->actingAs($fx['santri'][0]->user)
-            ->get(route('portal.home', ['anak' => $fx['santri'][1]->id]))
             ->assertForbidden();
     }
 
@@ -135,13 +91,13 @@ class PortalTest extends TestCase
     {
         $fx = $this->portalFixture();
         $this->seed(QuranSeeder::class);
-        $this->storeFatihah($fx, $fx['santri'][0], SetoranStatus::Ulang);
+        $this->storeFatihah($fx, $fx['santri'][0], SetoranStatus::Mengulang);
 
         $this->actingAs($fx['santri'][0]->user)
             ->get(route('portal.home'))
             ->assertOk()
             ->assertSee('Al-Fatihah')
-            ->assertSee('Ulang')
+            ->assertSee('Mengulang')
             ->assertSee('Perlu diulang')
             ->assertSee('pertemuan berikutnya')
             ->assertSee('Peta 30 juz')
@@ -154,7 +110,7 @@ class PortalTest extends TestCase
      */
     private function portalFixture(): array
     {
-        $ustaz = $this->userWithRole(Role::Ustaz, ['username' => 'ustaz1']);
+        $ustaz = $this->userWithRole(Role::KetuaPengajar, ['username' => 'ustaz1']);
         $year = AcademicYear::query()->create([
             'name' => '2026/2027',
             'start_date' => '2026-07-01',

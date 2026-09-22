@@ -13,7 +13,7 @@ class OperationalAccess
 {
     public function canOperateDaily(User $user): bool
     {
-        return $user->hasRole(Role::Ketua) || $user->hasRole(Role::Ustaz);
+        return $user->hasRole(Role::Ketua) || $user->hasAnyRole(Role::teaching());
     }
 
     public function canOperateHalaqah(User $user, Halaqah $halaqah): bool
@@ -22,12 +22,13 @@ class OperationalAccess
             return true;
         }
 
-        return $user->hasRole(Role::Ustaz) && (int) $halaqah->ustaz_user_id === (int) $user->id;
+        return $user->hasAnyRole(Role::teaching())
+            && (int) $halaqah->ustaz_user_id === (int) $user->id;
     }
 
     public function canViewSantri(User $user, SantriProfile $santri): bool
     {
-        if ($user->hasRole(Role::Ketua)) {
+        if ($user->hasRole(Role::Ketua) || $user->hasRole(Role::KetuaPengajar)) {
             return true;
         }
 
@@ -43,7 +44,7 @@ class OperationalAccess
     {
         $query = Halaqah::query()->where('academic_year_id', $this->activeYearId());
 
-        if ($user->hasRole(Role::Ketua)) {
+        if ($user->hasRole(Role::Ketua) || $user->hasRole(Role::KetuaPengajar)) {
             return $query;
         }
 
@@ -63,7 +64,7 @@ class OperationalAccess
             ->whereHas('halaqah', function (Builder $query) use ($user, $yearId): void {
                 $query->aktif()->where('academic_year_id', $yearId);
 
-                if (! $user->hasRole(Role::Ketua)) {
+                if (! $user->hasRole(Role::Ketua) && ! $user->hasRole(Role::KetuaPengajar)) {
                     $query->where('ustaz_user_id', $user->id);
                 }
             });
@@ -75,11 +76,11 @@ class OperationalAccess
     }
 
     /**
-     * @return list<int>|null null = semua santri (Ketua)
+     * @return list<int>|null null = semua santri (Ketua / Ketua Pengajar)
      */
     public function santriIds(User $user): ?array
     {
-        if ($user->hasRole(Role::Ketua)) {
+        if ($user->hasRole(Role::Ketua) || $user->hasRole(Role::KetuaPengajar)) {
             return null;
         }
 

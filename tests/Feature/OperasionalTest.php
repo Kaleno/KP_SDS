@@ -61,7 +61,7 @@ class OperasionalTest extends TestCase
     public function test_other_ustaz_cannot_see_or_open_session(): void
     {
         $fx = $this->opsFixture();
-        $outsider = $this->userWithRole(Role::Ustaz, ['username' => 'ustaz2']);
+        $outsider = $this->userWithRole(Role::Pengajar, ['username' => 'ustaz2']);
 
         $this->actingAs($outsider)
             ->get(route('ops.attendance.index'))
@@ -116,9 +116,8 @@ class OperasionalTest extends TestCase
             ->assertSee('Hari ini')
             ->assertSee('Minggu ini')
             ->assertSee('Bulan ini')
-            ->assertSee('Lancar')
-            ->assertSee('Ulang')
-            ->assertSee('Perbaikan')
+            ->assertSee('Lulus')
+            ->assertSee('Mengulang')
             ->assertSee('Filter lain')
             ->assertSee('aria-label="Rentang waktu"', false)
             ->assertSee('aria-label="Status setoran"', false)
@@ -129,11 +128,11 @@ class OperasionalTest extends TestCase
     {
         $fx = $this->opsFixture();
         $this->seedFatihah();
-        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lancar);
-        $this->makeSetoran($fx, $fx['santri'][1], SetoranStatus::Ulang);
+        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lulus);
+        $this->makeSetoran($fx, $fx['santri'][1], SetoranStatus::Mengulang);
 
         $this->actingAs($fx['ustaz'])
-            ->get(route('ops.setoran.index', ['status' => SetoranStatus::Ulang->value]))
+            ->get(route('ops.setoran.index', ['status' => SetoranStatus::Mengulang->value]))
             ->assertOk()
             ->assertSee('>Hasan Basri</p>', false)
             ->assertDontSee('>Ahmad Fauzi</p>', false)
@@ -146,8 +145,8 @@ class OperasionalTest extends TestCase
 
         $fx = $this->opsFixture();
         $this->seedFatihah();
-        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lancar, '2026-09-01');
-        $this->makeSetoran($fx, $fx['santri'][1], SetoranStatus::Lancar, '2026-09-07');
+        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lulus, '2026-09-01');
+        $this->makeSetoran($fx, $fx['santri'][1], SetoranStatus::Lulus, '2026-09-07');
 
         $this->actingAs($fx['ustaz'])
             ->get(route('ops.setoran.index', [
@@ -163,8 +162,8 @@ class OperasionalTest extends TestCase
     {
         $fx = $this->opsFixture();
         $this->seedFatihah();
-        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lancar, ayahEnd: 5);
-        $this->makeSetoran($fx, $fx['santri'][1], SetoranStatus::Lancar, ayahEnd: 2);
+        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lulus, ayahEnd: 5);
+        $this->makeSetoran($fx, $fx['santri'][1], SetoranStatus::Lulus, ayahEnd: 2);
 
         $response = $this->actingAs($fx['ustaz'])
             ->get(route('ops.setoran.create'))
@@ -184,8 +183,8 @@ class OperasionalTest extends TestCase
 
         $fx = $this->opsFixture();
         $this->seedFatihah();
-        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lancar, '2026-09-01', ayahEnd: 3);
-        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lancar, '2026-09-07', ayahEnd: 5);
+        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lulus, '2026-09-01', ayahEnd: 3);
+        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lulus, '2026-09-07', ayahEnd: 5);
 
         $map = $this->actingAs($fx['ustaz'])
             ->get(route('ops.setoran.create'))
@@ -199,7 +198,7 @@ class OperasionalTest extends TestCase
     {
         $fx = $this->opsFixture();
         $this->seedFatihah();
-        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lancar);
+        $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lulus);
 
         $map = $this->actingAs($fx['ustaz'])
             ->get(route('ops.setoran.create'))
@@ -220,7 +219,7 @@ class OperasionalTest extends TestCase
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 7,
-            'status' => SetoranStatus::Lancar->value,
+            'status' => SetoranStatus::Lulus->value,
             'note' => 'Al-Fatihah',
         ])->assertRedirect(route('ops.setoran.index'));
 
@@ -230,22 +229,22 @@ class OperasionalTest extends TestCase
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 7,
-            'status' => SetoranStatus::Ulang->value,
+            'status' => SetoranStatus::Mengulang->value,
         ])->assertRedirect();
 
         $setoran = HafalanSetoran::query()->where('santri_id', $fx['santri'][0]->id)->first();
-        $this->assertSame(SetoranStatus::Lancar, $setoran->status);
+        $this->assertSame(SetoranStatus::Lulus, $setoran->status);
 
         $this->actingAs($fx['ustaz'])->put(route('ops.setoran.update', $setoran), [
             'quran_surah_id' => 1,
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 5,
-            'status' => SetoranStatus::Perbaikan->value,
+            'status' => SetoranStatus::Mengulang->value,
             'correction_note' => 'Salah rentang ayat',
         ])->assertRedirect(route('ops.setoran.index'));
 
-        $this->assertSame(SetoranStatus::Perbaikan, $setoran->fresh()->status);
+        $this->assertSame(SetoranStatus::Mengulang, $setoran->fresh()->status);
         $this->assertSame('Salah rentang ayat', $setoran->fresh()->correction_note);
     }
 
@@ -260,7 +259,7 @@ class OperasionalTest extends TestCase
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 8,
-            'status' => SetoranStatus::Lancar->value,
+            'status' => SetoranStatus::Lulus->value,
         ])->assertSessionHasErrors('ayah_end');
     }
 
@@ -282,7 +281,7 @@ class OperasionalTest extends TestCase
     {
         $fx = $this->opsFixture();
         $session = $this->saveMixedAttendance($fx);
-        $outsider = $this->userWithRole(Role::Ustaz, ['username' => 'ustaz2']);
+        $outsider = $this->userWithRole(Role::Pengajar, ['username' => 'ustaz2']);
 
         $this->actingAs($outsider)
             ->get(route('ops.setoran.create', ['sesi' => $session->id]))
@@ -301,7 +300,7 @@ class OperasionalTest extends TestCase
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 7,
-            'status' => SetoranStatus::Lancar->value,
+            'status' => SetoranStatus::Lulus->value,
             'sesi' => $session->id,
         ])->assertSessionHasErrors('santri_id');
 
@@ -329,7 +328,7 @@ class OperasionalTest extends TestCase
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 7,
-            'status' => SetoranStatus::Lancar->value,
+            'status' => SetoranStatus::Lulus->value,
             'sesi' => $session->id,
         ];
 
@@ -417,7 +416,7 @@ class OperasionalTest extends TestCase
     private function opsFixture(): array
     {
         $ketua = $this->userWithRole(Role::Ketua);
-        $ustaz = $this->userWithRole(Role::Ustaz, ['username' => 'ustaz1']);
+        $ustaz = $this->userWithRole(Role::KetuaPengajar, ['username' => 'ustaz1']);
         $year = AcademicYear::query()->create([
             'name' => '2026/2027',
             'start_date' => '2026-07-01',

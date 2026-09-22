@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ActivityType;
 use App\Enums\SetoranStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'halaqah_id',
     'ustaz_user_id',
     'academic_year_id',
+    'activity_type',
+    'iqro_level',
+    'iqro_page',
     'quran_surah_id',
     'setoran_date',
     'ayah_start',
@@ -33,7 +37,10 @@ class HafalanSetoran extends Model
             'setoran_date' => 'date',
             'ayah_start' => 'integer',
             'ayah_end' => 'integer',
+            'iqro_level' => 'integer',
+            'iqro_page' => 'integer',
             'status' => SetoranStatus::class,
+            'activity_type' => ActivityType::class,
         ];
     }
 
@@ -77,8 +84,21 @@ class HafalanSetoran extends Model
         return $this->belongsTo(AcademicYear::class);
     }
 
+    public function isIqro(): bool
+    {
+        return $this->iqro_level !== null;
+    }
+
     public function ayahRange(): string
     {
+        if ($this->isIqro()) {
+            return 'Iqro '.$this->iqro_level.' hlm. '.$this->iqro_page;
+        }
+
+        if ($this->ayah_start === null) {
+            return '—';
+        }
+
         return $this->ayah_start === $this->ayah_end
             ? (string) $this->ayah_start
             : $this->ayah_start.'–'.$this->ayah_end;

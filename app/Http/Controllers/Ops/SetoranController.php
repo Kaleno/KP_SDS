@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Ops;
 
+use App\Enums\ActivityType;
 use App\Enums\AttendanceStatus;
+use App\Enums\SantriTrack;
 use App\Enums\SetoranStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Ops\StoreSetoranRequest;
@@ -12,6 +14,7 @@ use App\Models\HafalanSetoran;
 use App\Models\QuranSurah;
 use App\Models\SantriProfile;
 use App\Models\User;
+use App\Services\OperationalCalendar;
 use App\Support\DateQuery;
 use App\Support\OperationalAccess;
 use Carbon\Carbon;
@@ -23,7 +26,10 @@ use Illuminate\View\View;
 
 class SetoranController extends Controller
 {
-    public function __construct(private OperationalAccess $access) {}
+    public function __construct(
+        private OperationalAccess $access,
+        private OperationalCalendar $calendar,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -104,10 +110,16 @@ class SetoranController extends Controller
     public function store(StoreSetoranRequest $request): RedirectResponse
     {
         $validated = $request->safe()->except(['sesi']);
-        $member = $this->access
+        $session = $this->resolvedSession($request);
+        $memberQuery = $this->access
             ->guidedMemberQuery($request->user())
-            ->where('santri_id', $validated['santri_id'])
-            ->first();
+            ->where('santri_id', $validated['santri_id']);
+
+        if ($session) {
+            $memberQuery->where('halaqah_id', $session->schedule->halaqah_id);
+        }
+
+        $member = $memberQuery->with('santri')->first();
 
         if (! $member) {
             throw ValidationException::withMessages([
@@ -115,15 +127,7 @@ class SetoranController extends Controller
             ]);
         }
 
-        $session = $this->resolvedSession($request);
-
         if ($session) {
-            if ((int) $session->schedule->halaqah_id !== (int) $member->halaqah_id) {
-                throw ValidationException::withMessages([
-                    'santri_id' => 'Santri ini tidak ada di sesi absensi yang dipilih.',
-                ]);
-            }
-
             $waiting = $this->hadirWaitingSetoran($request->user(), $session);
             $santriId = (int) $validated['santri_id'];
             if (! $waiting->contains($santriId)) {
@@ -135,12 +139,33 @@ class SetoranController extends Controller
             $validated['setoran_date'] = $session->session_date->toDateString();
         }
 
+        $santri = $member->santri;
+        $date = Carbon::parse($validated['setoran_date']);
+        $isIqro = $santri->track === SantriTrack::Iqro;
+
+        if ($isIqro) {
+            $validated['quran_surah_id'] = null;
+            $validated['ayah_start'] = null;
+            $validated['ayah_end'] = null;
+            $validated['activity_type'] = ActivityType::Ngaji;
+        } else {
+            $validated['iqro_level'] = null;
+            $validated['iqro_page'] = null;
+            $validated['activity_type'] = $this->calendar->isFriday($date)
+                ? ActivityType::Hafalan
+                : ActivityType::Ngaji;
+        }
+
         HafalanSetoran::query()->create([
             ...$validated,
             'halaqah_id' => $member->halaqah_id,
             'academic_year_id' => $member->academic_year_id,
             'ustaz_user_id' => $request->user()->id,
         ]);
+
+        if ($isIqro && $request->filled('iqro_level')) {
+            $santri->update(['iqro_level' => (int) $validated['iqro_level']]);
+        }
 
         if ($session) {
             $remaining = $this->hadirWaitingSetoran($request->user(), $session);
@@ -186,6 +211,7 @@ class SetoranController extends Controller
             ->guidedMemberQuery($user)
             ->with(['santri.user', 'halaqah'])
             ->get()
+            ->unique('santri_id')
             ->sortBy(fn ($member) => $member->santri->user->name);
 
         if ($session) {
@@ -195,12 +221,17 @@ class SetoranController extends Controller
                 ->values();
         }
 
+        $trackBySantri = $members->mapWithKeys(
+            fn ($member) => [(int) $member->santri_id => $member->santri->track?->value ?? 'alquran'],
+        )->all();
+
         return [
             'members' => $members,
             'surahs' => QuranSurah::query()->orderBy('id')->get(),
             'statuses' => SetoranStatus::cases(),
             'setoran' => $setoran,
             'session' => $session,
+            'trackBySantri' => $trackBySantri,
             'nextAyahBySantri' => $setoran ? [] : $this->nextAyahBySantri($members->pluck('santri_id')),
         ];
     }

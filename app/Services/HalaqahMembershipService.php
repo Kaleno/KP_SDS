@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\SantriStatus;
+use App\Models\AcademicYear;
 use App\Models\Halaqah;
 use App\Models\HalaqahMember;
 use App\Models\SantriProfile;
@@ -21,6 +22,59 @@ class HalaqahMembershipService
             'academic_year_id' => $halaqah->academic_year_id,
             'started_at' => $startedAt,
         ]);
+    }
+
+    public function enrollAllActive(Halaqah $halaqah): void
+    {
+        $startedAt = $halaqah->academicYear?->start_date?->toDateString() ?? now()->toDateString();
+
+        SantriProfile::query()->aktif()->each(function (SantriProfile $santri) use ($halaqah, $startedAt): void {
+            $alreadyIn = HalaqahMember::query()
+                ->where('halaqah_id', $halaqah->id)
+                ->where('santri_id', $santri->id)
+                ->whereNull('ended_at')
+                ->exists();
+
+            if ($alreadyIn) {
+                return;
+            }
+
+            $this->add($halaqah, $santri, $startedAt);
+        });
+    }
+
+    public function syncSantriAcrossActiveClasses(SantriProfile $santri): void
+    {
+        if ($santri->status !== SantriStatus::Aktif) {
+            HalaqahMember::query()
+                ->where('santri_id', $santri->id)
+                ->whereNull('ended_at')
+                ->each(fn (HalaqahMember $member) => $this->end($member, now()->toDateString(), 'Status santri tidak aktif'));
+
+            return;
+        }
+
+        $year = AcademicYear::query()->aktif()->first();
+        if (! $year) {
+            return;
+        }
+
+        Halaqah::query()
+            ->aktif()
+            ->where('academic_year_id', $year->id)
+            ->each(function (Halaqah $halaqah) use ($santri, $year): void {
+                $alreadyIn = HalaqahMember::query()
+                    ->where('halaqah_id', $halaqah->id)
+                    ->where('santri_id', $santri->id)
+                    ->whereNull('ended_at')
+                    ->exists();
+
+                if ($alreadyIn) {
+                    return;
+                }
+
+                $this->add($halaqah, $santri, $year->start_date->toDateString());
+            });
     }
 
     public function mutate(HalaqahMember $member, Halaqah $target, string $movedAt, ?string $note): HalaqahMember
@@ -76,14 +130,14 @@ class HalaqahMembershipService
         }
 
         $alreadyIn = HalaqahMember::query()
+            ->where('halaqah_id', $halaqah->id)
             ->where('santri_id', $santri->id)
-            ->where('academic_year_id', $halaqah->academic_year_id)
             ->whereNull('ended_at')
             ->exists();
 
         if ($alreadyIn) {
             throw ValidationException::withMessages([
-                'santri_id' => 'Santri sudah berada di halaqah aktif pada tahun ajaran ini.',
+                'santri_id' => 'Santri sudah berada di kelas ini.',
             ]);
         }
     }

@@ -7,7 +7,7 @@ use App\Models\Schedule;
 
 class ScheduleConflictChecker
 {
-    public function ustazOverlaps(Halaqah $halaqah, int $dayOfWeek, string $startTime, string $endTime, ?int $ignoreScheduleId = null): bool
+    public function ustazOverlaps(Halaqah $halaqah, int $dayOfWeek, string $startTime, string $endTime, ?int $ignoreScheduleId = null, bool $ignoreOwnHalaqah = false): bool
     {
         $query = Schedule::query()
             ->where('is_active', true)
@@ -20,6 +20,10 @@ class ScheduleConflictChecker
 
         if ($ignoreScheduleId) {
             $query->where('id', '!=', $ignoreScheduleId);
+        }
+
+        if ($ignoreOwnHalaqah && $halaqah->exists) {
+            $query->where('halaqah_id', '!=', $halaqah->id);
         }
 
         return $query->get()->contains(function (Schedule $schedule) use ($startTime, $endTime) {

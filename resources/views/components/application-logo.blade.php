@@ -1,7 +1,5 @@
-<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" {{ $attributes }}>
-    <rect width="48" height="48" rx="14" fill="#224942"/>
-    <path d="M24 8.5C17.2 8.5 12 12.9 12 18.4c0 7.4 8.4 13.1 11.2 14.9a1.6 1.6 0 0 0 1.6 0C27.6 31.5 36 25.8 36 18.4 36 12.9 30.8 8.5 24 8.5Z" fill="#E8D4A0"/>
-    <path d="M24 12.2c-4.7 0-8.2 2.9-8.2 6.4 0 5.2 5.8 9.3 7.7 10.5a.9.9 0 0 0 1 0c1.9-1.2 7.7-5.3 7.7-10.5 0-3.5-3.5-6.4-8.2-6.4Z" fill="#224942"/>
-    <path d="M16 33.2h16c.7 0 1.3.6 1.3 1.3v1.7c0 .7-.6 1.3-1.3 1.3H16c-.7 0-1.3-.6-1.3-1.3v-1.7c0-.7.6-1.3 1.3-1.3Z" fill="#E8D4A0"/>
-    <path d="M18.5 35.2h11" stroke="#224942" stroke-width="1.4" stroke-linecap="round"/>
-</svg>
+<img
+    src="{{ asset('images/logo-masjid-al-ihsan.png') }}"
+    alt="{{ config('app.name') }}"
+    {{ $attributes->merge(['class' => 'object-contain']) }}
+>

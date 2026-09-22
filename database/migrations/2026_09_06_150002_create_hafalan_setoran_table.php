@@ -14,10 +14,13 @@ return new class extends Migration
             $table->foreignId('halaqah_id')->constrained('halaqah')->restrictOnDelete();
             $table->foreignId('ustaz_user_id')->constrained('users')->restrictOnDelete();
             $table->foreignId('academic_year_id')->constrained()->restrictOnDelete();
-            $table->unsignedTinyInteger('quran_surah_id');
+            $table->string('activity_type', 20)->default('ngaji');
+            $table->unsignedTinyInteger('iqro_level')->nullable();
+            $table->unsignedSmallInteger('iqro_page')->nullable();
+            $table->unsignedTinyInteger('quran_surah_id')->nullable();
             $table->date('setoran_date');
-            $table->unsignedSmallInteger('ayah_start');
-            $table->unsignedSmallInteger('ayah_end');
+            $table->unsignedSmallInteger('ayah_start')->nullable();
+            $table->unsignedSmallInteger('ayah_end')->nullable();
             $table->string('status', 20);
             $table->text('note')->nullable();
             $table->string('correction_note')->nullable();

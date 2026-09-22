@@ -31,9 +31,19 @@
             @endif
             <form method="POST" action="{{ route('ops.setoran.store') }}" class="ui-card space-y-4 p-5"
                   x-data="{
+                      trackBySantri: {{ \Illuminate\Support\Js::from($trackBySantri ?? new \stdClass) }},
+                      track: '{{ old('track_hint', '') }}',
                       ayahMax: 286,
                       ayahStart: {{ \Illuminate\Support\Js::from(old('ayah_start', '')) }},
                       nextAyahBySantri: {{ \Illuminate\Support\Js::from($nextAyahBySantri ?: new \stdClass) }},
+                      syncTrack() {
+                          const santriId = document.getElementById('santri_id')?.value;
+                          if (! santriId) {
+                              this.track = '';
+                              return;
+                          }
+                          this.track = this.trackBySantri[santriId] ?? this.trackBySantri[Number(santriId)] ?? 'alquran';
+                      },
                       fillAyahStart(surahId = null, ayahCount = null) {
                           if (ayahCount) {
                               this.ayahMax = ayahCount;
@@ -48,6 +58,7 @@
                           this.ayahStart = next ?? 1;
                       }
                   }"
+                  x-init="syncTrack()"
                   @surah-picked.window="fillAyahStart($event.detail.id, $event.detail.ayah)">
                 @csrf
                 @include('ops.setoran.form')

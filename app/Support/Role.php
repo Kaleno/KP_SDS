@@ -8,11 +8,11 @@ final class Role
 
     public const Ketua = 'ketua';
 
-    public const Ustaz = 'ustaz';
+    public const KetuaPengajar = 'ketua_pengajar';
+
+    public const Pengajar = 'pengajar';
 
     public const Santri = 'santri';
-
-    public const OrangTua = 'orang_tua';
 
     /**
      * @return list<string>
@@ -22,21 +22,51 @@ final class Role
         return [
             self::SuperAdmin,
             self::Ketua,
-            self::Ustaz,
+            self::KetuaPengajar,
+            self::Pengajar,
             self::Santri,
-            self::OrangTua,
+        ];
+    }
+
+    /**
+     * Role yang boleh absensi & penilaian.
+     *
+     * @return list<string>
+     */
+    public static function teaching(): array
+    {
+        return [
+            self::KetuaPengajar,
+            self::Pengajar,
+        ];
+    }
+
+    /**
+     * Role yang boleh absensi, penilaian, laporan, dan (nanti) SPP/jadwal.
+     *
+     * @return list<string>
+     */
+    public static function teachingLeaders(): array
+    {
+        return [
+            self::KetuaPengajar,
         ];
     }
 
     public static function label(string $role): string
     {
         return match ($role) {
-            self::SuperAdmin => 'Super Admin',
-            self::Ketua => 'Ketua',
-            self::Ustaz => 'Ustaz',
+            self::SuperAdmin => 'System Admin',
+            self::Ketua => 'Ketua DKM',
+            self::KetuaPengajar => 'Ketua Pengajar',
+            self::Pengajar => 'Pengajar',
             self::Santri => 'Santri',
-            self::OrangTua => 'Orang Tua',
             default => $role,
         };
+    }
+
+    public static function isTeaching(string $role): bool
+    {
+        return in_array($role, self::teaching(), true);
     }
 }

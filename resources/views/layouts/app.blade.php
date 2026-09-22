@@ -14,10 +14,20 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans antialiased text-slate-800">
-        <div class="min-h-screen lg:flex" x-data="{ menuOpen: false }">
+        <div
+            class="min-h-screen lg:flex lg:h-screen lg:overflow-hidden"
+            x-data="{ menuOpen: false }"
+            x-init="
+                const nav = $refs.sidebarNav;
+                if (nav) {
+                    nav.scrollTop = Number(sessionStorage.getItem('sidebar-nav-scroll') || 0);
+                    nav.addEventListener('scroll', () => sessionStorage.setItem('sidebar-nav-scroll', String(nav.scrollTop)));
+                }
+            "
+        >
             @include('layouts.navigation')
 
-            <div class="flex-1 flex flex-col min-w-0 safe-bottom lg:pb-0">
+            <div class="ui-content-scroll flex min-w-0 flex-1 flex-col safe-bottom lg:pb-0">
                 <header class="sticky top-0 z-10 hidden lg:block">
                     <div class="mx-4 mt-4 sm:mx-6 lg:mx-8">
                         <div class="ui-card px-5 py-4">

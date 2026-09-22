@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\AttendanceStatus;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
+use App\Models\SantriProfile;
 use App\Models\Schedule;
 use App\Models\User;
 use Carbon\CarbonInterface;
@@ -13,11 +14,19 @@ use Illuminate\Validation\ValidationException;
 
 class AttendanceSessionService
 {
+    public function __construct(private OperationalCalendar $calendar) {}
+
     public function open(Schedule $schedule, User $opener, CarbonInterface $date): AttendanceSession
     {
         if (! $schedule->is_active) {
             throw ValidationException::withMessages([
                 'schedule' => 'Jadwal ini tidak aktif.',
+            ]);
+        }
+
+        if ($this->calendar->isOffDay($date)) {
+            throw ValidationException::withMessages([
+                'schedule' => $this->calendar->offDayMessage($date),
             ]);
         }
 
@@ -44,17 +53,15 @@ class AttendanceSessionService
 
     public function syncMembers(AttendanceSession $session): void
     {
-        $session->loadMissing('schedule.halaqah.activeMembers');
-
-        foreach ($session->schedule->halaqah->activeMembers as $member) {
+        SantriProfile::query()->aktif()->each(function (SantriProfile $santri) use ($session): void {
             Attendance::query()->firstOrCreate(
                 [
                     'attendance_session_id' => $session->id,
-                    'santri_id' => $member->santri_id,
+                    'santri_id' => $santri->id,
                 ],
                 ['status' => AttendanceStatus::Hadir],
             );
-        }
+        });
     }
 
     /**

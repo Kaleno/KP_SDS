@@ -39,8 +39,6 @@ Laragon (Apache / MySQL / PHP).
 Dokumen turunan:
 
 - [docs/ERD.md](docs/ERD.md) — skema relasi dan aturan data
-- [docs/MVP.md](docs/MVP.md) — daftar modul dan urutan build
-- [docs/PLAN.md](docs/PLAN.md) — urutan pengerjaan sesi coding
 
 ---
 

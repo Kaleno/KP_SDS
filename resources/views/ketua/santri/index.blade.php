@@ -20,7 +20,7 @@
                         <tr>
                             <th>NIS</th>
                             <th>Nama</th>
-                            <th>Gender</th>
+                            <th>Jalur</th>
                             <th>Status</th>
                             <th></th>
                         </tr>
@@ -29,8 +29,15 @@
                         @forelse ($santriList as $santri)
                             <tr>
                                 <td data-label="NIS" class="font-medium">{{ $santri->nis }}</td>
-                                <td data-label="Nama">{{ $santri->user->name }}</td>
-                                <td data-label="Gender">{{ $santri->gender->label() }}</td>
+                                <td data-label="Nama">
+                                    <span class="font-medium text-teal-950">{{ $santri->user->name }}</span>
+                                    <span class="mt-0.5 block text-xs text-slate-500">{{ $santri->gender->label() }}</span>
+                                </td>
+                                <td data-label="Jalur">
+                                    <x-badge :tone="$santri->track === \App\Enums\SantriTrack::Iqro ? 'warn' : 'ok'">
+                                        {{ $santri->track?->label() ?? '—' }}
+                                    </x-badge>
+                                </td>
                                 <td data-label="Status">
                                     <x-badge :tone="$santri->status->value === 'aktif' ? 'ok' : 'muted'">{{ $santri->status->label() }}</x-badge>
                                 </td>

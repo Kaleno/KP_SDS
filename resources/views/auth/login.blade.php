@@ -30,5 +30,10 @@
         <x-primary-button class="btn-block min-h-12">
             Masuk
         </x-primary-button>
+
+        <p class="pt-2 text-center text-sm text-slate-500">
+            Belum punya akun?
+            <a href="{{ route('daftar.create') }}" class="font-semibold text-teal-800">Daftar santri</a>
+        </p>
     </form>
 </x-guest-layout>

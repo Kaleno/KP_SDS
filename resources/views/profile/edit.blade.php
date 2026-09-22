@@ -15,7 +15,7 @@
             @include('profile.partials.update-password-form')
         </x-card>
 
-        @unless (Auth::user()->hasAnyRole([\App\Support\Role::Santri, \App\Support\Role::OrangTua, \App\Support\Role::Ustaz]))
+        @unless (Auth::user()->hasAnyRole([\App\Support\Role::Santri, ...\App\Support\Role::teaching()]))
         <x-card>
             @include('profile.partials.delete-user-form')
         </x-card>

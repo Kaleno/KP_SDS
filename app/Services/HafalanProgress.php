@@ -47,7 +47,8 @@ class HafalanProgress
         $rows = HafalanSetoran::query()
             ->whereIn('santri_id', $ids)
             ->where('academic_year_id', $year->id)
-            ->where('status', SetoranStatus::Lancar)
+            ->where('status', SetoranStatus::Lulus)
+            ->whereNotNull('quran_surah_id')
             ->get(['santri_id', 'quran_surah_id', 'ayah_start', 'ayah_end']);
 
         foreach ($rows as $row) {

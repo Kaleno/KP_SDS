@@ -4,7 +4,7 @@
             <div>
                 <p class="ui-section-title">Operasional</p>
                 <h1 class="font-display text-2xl font-semibold text-teal-950">Setoran</h1>
-                <p class="text-sm text-slate-500">Riwayat hafalan halaqah Anda</p>
+                <p class="text-sm text-slate-500">Riwayat penilaian hafalan & Iqro</p>
             </div>
             <a href="{{ route('ops.setoran.create') }}" class="btn-primary">
                 <x-icon name="plus" class="h-4 w-4" /> Input
@@ -125,7 +125,7 @@
                             {{ $item->setoran_date->format('d/m/Y') }} · {{ $item->halaqah->name }}
                         </p>
                     </div>
-                    <x-badge :tone="$item->status->value === 'lancar' ? 'ok' : ($item->status->value === 'ulang' ? 'warn' : 'info')">
+                    <x-badge :tone="$item->status->value === 'lulus' ? 'ok' : 'warn'">
                         {{ $item->status->label() }}
                     </x-badge>
                 </div>

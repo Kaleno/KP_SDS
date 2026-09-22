@@ -4,8 +4,6 @@ Sistem data santri: monitoring hafalan, absensi, dan penjadwalan pengajar.
 
 - [BLUEPRINT.md](BLUEPRINT.md) — visi, role, alur, keputusan domain
 - [docs/ERD.md](docs/ERD.md) — skema database
-- [docs/MVP.md](docs/MVP.md) — modul dan urutan build
-- [docs/PLAN.md](docs/PLAN.md) — rencana pengerjaan
 
 ## Menjalankan (lokal)
 
@@ -27,10 +25,10 @@ Password default ada di `.env` (`SEED_*`). Nilai awal:
 
 | Role | Username | Password |
 | --- | --- | --- |
-| Super Admin | `superadmin` | `password` |
-| Ketua | `ketua` | `password` |
-| Ustaz | `ustaz1` | `password` |
+| System Admin | `superadmin` | `password` |
+| Ketua DKM | `ketua` | `password` |
+| Ketua Pengajar | `ustaz1` | `password` |
+| Pengajar | `pengajar1` | `password` |
 | Santri | `2026001` / `2026002` / `2026003` | `password` |
-| Orang Tua | `ortu1` | `password` |
 
-Login memakai username atau email. Pendaftaran publik dimatikan. Orang tua `ortu1` tertaut ke dua santri pertama.
+Login memakai username atau email.

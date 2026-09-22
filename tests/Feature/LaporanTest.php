@@ -47,13 +47,13 @@ class LaporanTest extends TestCase
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 7,
-            'status' => SetoranStatus::Lancar,
+            'status' => SetoranStatus::Lulus,
         ]);
 
         $this->actingAs($fx['ketua'])
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Halaqah aktif')
+            ->assertSee('Kelas aktif')
             ->assertSee('Santri aktif')
             ->assertSee('Setoran hari ini')
             ->assertSee('Alfa hari ini');
@@ -73,7 +73,7 @@ class LaporanTest extends TestCase
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 7,
-            'status' => SetoranStatus::Lancar,
+            'status' => SetoranStatus::Lulus,
         ]);
         HafalanSetoran::query()->create([
             'santri_id' => $fx['santri'][1]->id,
@@ -84,11 +84,11 @@ class LaporanTest extends TestCase
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 7,
-            'status' => SetoranStatus::Ulang,
+            'status' => SetoranStatus::Mengulang,
         ]);
 
         $this->actingAs($fx['ustaz'])
-            ->get(route('ops.setoran.index', ['status' => SetoranStatus::Ulang->value]))
+            ->get(route('ops.setoran.index', ['status' => SetoranStatus::Mengulang->value]))
             ->assertOk()
             ->assertSee('Hasan Basri');
     }
@@ -112,7 +112,7 @@ class LaporanTest extends TestCase
     {
         $fx = $this->opsFixture();
         $this->seed(QuranSeeder::class);
-        $outsider = $this->userWithRole(Role::Ustaz, ['username' => 'ustaz2']);
+        $outsider = $this->userWithRole(Role::Pengajar, ['username' => 'ustaz2']);
 
         $this->actingAs($outsider)
             ->get(route('laporan.progress.show', $fx['santri'][0]))
@@ -150,7 +150,7 @@ class LaporanTest extends TestCase
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 7,
-            'status' => SetoranStatus::Lancar,
+            'status' => SetoranStatus::Lulus,
         ]);
 
         $this->actingAs($fx['ketua'])
@@ -178,7 +178,7 @@ class LaporanTest extends TestCase
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 7,
-            'status' => SetoranStatus::Lancar,
+            'status' => SetoranStatus::Lulus,
         ]);
 
         $this->actingAs($fx['ketua'])
@@ -200,7 +200,7 @@ class LaporanTest extends TestCase
     private function opsFixture(): array
     {
         $ketua = $this->userWithRole(Role::Ketua);
-        $ustaz = $this->userWithRole(Role::Ustaz, ['username' => 'ustaz1']);
+        $ustaz = $this->userWithRole(Role::KetuaPengajar, ['username' => 'ustaz1']);
         $year = AcademicYear::query()->create([
             'name' => '2026/2027',
             'start_date' => '2026-07-01',

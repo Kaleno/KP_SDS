@@ -43,7 +43,7 @@ class AuthenticatedSessionController extends Controller
             return route('super-admin.ketua.index', absolute: false);
         }
 
-        if ($user?->hasRole(Role::Santri) || $user?->hasRole(Role::OrangTua)) {
+        if ($user?->hasRole(Role::Santri)) {
             return route('portal.home', absolute: false);
         }
 

@@ -45,7 +45,7 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        abort_if($user->hasAnyRole([Role::Santri, Role::OrangTua, Role::Ustaz]), 403);
+        abort_if($user->hasAnyRole([Role::Santri, ...Role::teaching()]), 403);
 
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],

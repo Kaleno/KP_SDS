@@ -4,7 +4,7 @@
             <div>
                 <p class="ui-section-title">Master data</p>
                 <h1 class="font-display text-2xl font-semibold text-teal-950">Pengajar</h1>
-                <p class="text-sm text-slate-500">Akun ustaz pembimbing halaqah</p>
+                <p class="text-sm text-slate-500">Ketua pengajar dan pengajar kelas</p>
             </div>
             <a href="{{ route('ketua.ustaz.create') }}" class="btn-primary">
                 <x-icon name="plus" class="h-4 w-4" /> Tambah
@@ -18,6 +18,7 @@
                 <thead>
                     <tr>
                         <th>Nama</th>
+                        <th>Peran</th>
                         <th>Username</th>
                         <th>Status</th>
                         <th></th>
@@ -27,6 +28,7 @@
                     @forelse ($ustazList as $ustaz)
                         <tr>
                             <td data-label="Nama" class="font-medium">{{ $ustaz->name }}</td>
+                            <td data-label="Peran">{{ \App\Support\Role::label($ustaz->getRoleNames()->first() ?? '') }}</td>
                             <td data-label="Username">{{ $ustaz->username }}</td>
                             <td data-label="Status">
                                 <x-badge :tone="$ustaz->is_active ? 'ok' : 'muted'">{{ $ustaz->is_active ? 'Aktif' : 'Nonaktif' }}</x-badge>
@@ -43,7 +45,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="px-5 py-8 text-center text-slate-500">Belum ada ustaz.</td></tr>
+                        <tr><td colspan="5" class="px-5 py-8 text-center text-slate-500">Belum ada pengajar.</td></tr>
                     @endempty
                 </tbody>
             </table>

@@ -1,10 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="ui-section-title">{{ $isParent ? 'Orang tua' : 'Santri' }}</p>
-            <h1 class="font-display text-2xl font-semibold text-teal-950">
-                {{ $isParent ? 'Pantau anak' : 'Beranda' }}
-            </h1>
+            <p class="ui-section-title">Santri</p>
+            <h1 class="font-display text-2xl font-semibold text-teal-950">Beranda</h1>
             <p class="mt-0.5 text-sm text-slate-500">
                 {{ $year?->name ?? 'Belum ada tahun ajaran aktif' }} · hanya melihat, tidak mengubah data
             </p>
@@ -12,29 +10,8 @@
     </x-slot>
 
     <div class="max-w-2xl space-y-5">
-        @if ($isParent && $children->isNotEmpty())
-            <section class="space-y-2">
-                <div class="flex items-center justify-between gap-3 px-1">
-                    <h2 class="ui-section-title">Pilih anak</h2>
-                    <p class="text-xs text-slate-400">{{ $children->count() }} anak tertaut</p>
-                </div>
-                <div class="flex gap-2 overflow-x-auto pb-1">
-                    @foreach ($children as $child)
-                        <a href="{{ route('portal.home', ['anak' => $child->id]) }}"
-                           class="shrink-0 min-h-11 px-4 rounded-full border text-sm font-semibold flex items-center gap-2 transition
-                                {{ $santri?->id === $child->id ? 'bg-teal-800 text-white border-teal-800 shadow-glow' : 'bg-white text-slate-700 border-slate-200 hover:border-teal-400' }}">
-                            {{ $child->user->name }}
-                            @if ($santri?->id === $child->id)
-                                <span class="text-[10px] uppercase tracking-wide {{ $santri?->id === $child->id ? 'text-gold-300' : '' }}">Dipantau</span>
-                            @endif
-                        </a>
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
         @unless ($santri)
-            <x-empty>Belum ada anak yang ditautkan ke akun ini. Hubungi Ketua agar NIS anak ditautkan, lalu catatan hafalan akan muncul di sini.</x-empty>
+            <x-empty>Profil santri belum tersedia. Hubungi Ketua DKM.</x-empty>
         @else
             @php
                 $snapshot = $snapshot ?? null;
@@ -62,16 +39,16 @@
                 <div class="pointer-events-none absolute -right-6 top-0 h-32 w-32 rounded-full bg-gold-400/20 blur-2xl"></div>
                 <p class="text-[11px] uppercase tracking-[0.2em] text-gold-300">Assalamu'alaikum</p>
                 <p class="mt-2 font-display text-2xl font-semibold text-balance">
-                    {{ $isParent ? 'Hafalan '.$santri->user->name : $santri->user->name }}
+                    {{ $santri->user->name }}
                 </p>
                 <p class="mt-1 text-sm text-teal-100/80">
                     NIS {{ $santri->nis }}
                     @if ($membership)
-                        · {{ $membership->halaqah->name }} · Ustaz {{ $membership->halaqah->ustaz->name }}
+                        · {{ $membership->halaqah->name }} · Pengajar {{ $membership->halaqah->ustaz->name }}
                     @endif
                 </p>
                 <p class="mt-3 text-sm text-teal-100/75">
-                    {{ $isParent ? 'Catatan dari pengajar untuk anak Anda.' : 'Catatan hafalan dan kehadiranmu dari pengajar.' }}
+                    Catatan hafalan dan kehadiranmu dari pengajar.
                     Anda hanya melihat, tidak mengubah data.
                 </p>
 
@@ -94,6 +71,47 @@
                     @endif
                 @endif
             </div>
+
+            <section class="ui-card p-5 space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                    <h2 class="ui-section-title">Info pembayaran</h2>
+                    <p class="text-xs text-slate-400">Rp {{ number_format($sppAmount ?? \App\Support\AppSettings::DefaultSppMonthlyAmount, 0, ',', '.') }}/bln</p>
+                </div>
+                @if (($unpaidMonths ?? 0) > 1)
+                    <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                        Nunggak {{ $unpaidMonths }} bulan · Rp {{ number_format($unpaidMonths * ($sppAmount ?? 0), 0, ',', '.') }}
+                    </div>
+                @elseif (($unpaidMonths ?? 0) === 1)
+                    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        Belum lunas 1 bulan
+                    </div>
+                @endif
+                @if ($currentPayment ?? null)
+                    <div class="flex items-center justify-between gap-3 rounded-2xl bg-cream-100 px-4 py-3">
+                        <div>
+                            <p class="font-semibold text-teal-950">{{ $currentPayment['label'] }}</p>
+                            <p class="text-xs text-slate-500">Status bulan ini</p>
+                        </div>
+                        <x-badge :tone="$currentPayment['paid'] ? 'ok' : 'warn'">
+                            {{ $currentPayment['paid'] ? 'Lunas' : 'Belum bayar' }}
+                        </x-badge>
+                    </div>
+                @endif
+                <div class="space-y-2">
+                    @foreach ($payments ?? [] as $row)
+                        <div class="flex items-center justify-between gap-3 text-sm">
+                            <span class="text-slate-600">{{ $row['label'] }}</span>
+                            @if (! ($row['obligated'] ?? true))
+                                <span class="text-slate-400">—</span>
+                            @else
+                                <span class="font-semibold {{ $row['paid'] ? 'text-teal-800' : 'text-amber-700' }}">
+                                    {{ $row['paid'] ? 'Lunas' : 'Belum' }}
+                                </span>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </section>
 
             @if ($snapshot)
                 <nav class="flex gap-2 overflow-x-auto pb-1" aria-label="Bagian halaman">
@@ -238,7 +256,7 @@
                                 <p class="text-sm text-slate-500">{{ $dateLabel($item->setoran_date) }} · {{ $item->setoran_date->format('d/m/Y') }}</p>
                                 <p class="mt-1 text-xs text-slate-500">{{ $item->status->hint() }}</p>
                             </div>
-                            <x-badge :tone="$item->status->value === 'lancar' ? 'ok' : ($item->status->value === 'ulang' ? 'warn' : 'info')">
+                            <x-badge :tone="$item->status->value === 'lulus' ? 'ok' : 'warn'">
                                 {{ $item->status->label() }}
                             </x-badge>
                         </div>

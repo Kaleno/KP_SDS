@@ -2,12 +2,12 @@
     <x-slot name="header">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <p class="ui-section-title">Master data</p>
-                <h1 class="font-display text-2xl font-semibold text-teal-950">Halaqah</h1>
-                <p class="text-sm text-slate-500">Kelompok, pembimbing, anggota, jadwal</p>
+                <p class="ui-section-title">Pembelajaran</p>
+                <h1 class="font-display text-2xl font-semibold text-teal-950">Kelas</h1>
+                <p class="text-sm text-slate-500">Jadwal dan pengajar. Santri aktif otomatis ikut.</p>
             </div>
             <a href="{{ route('ketua.halaqah.create') }}" class="btn-primary">
-                <x-icon name="plus" class="h-4 w-4" /> Tambah
+                <x-icon name="plus" class="h-4 w-4" /> Buat kelas
             </a>
         </div>
     </x-slot>
@@ -19,25 +19,32 @@
                     <thead>
                         <tr>
                             <th>Nama</th>
-                            <th>Tahun</th>
-                            <th>Ustaz</th>
-                            <th>Anggota</th>
+                            <th>Pengajar</th>
+                            <th>Jadwal</th>
+                            <th>Santri</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($halaqahList as $item)
+                        @forelse ($kelasList as $item)
                             <tr>
                                 <td data-label="Nama" class="font-medium">{{ $item->name }}</td>
-                                <td data-label="Tahun">{{ $item->academicYear->name }}</td>
-                                <td data-label="Ustaz">{{ $item->ustaz->name }}</td>
-                                <td data-label="Anggota">{{ $item->active_members_count }}</td>
+                                <td data-label="Pengajar">{{ $item->ustaz->name }}</td>
+                                <td data-label="Jadwal">
+                                    @if ($item->schedules->isEmpty())
+                                        <span class="text-slate-400">Belum ada jadwal</span>
+                                    @else
+                                        {{ \App\Support\WeekDay::summarize($item->schedules->pluck('day_of_week')->all()) }}
+                                        · {{ $item->schedules->first()->timeRange() }}
+                                    @endif
+                                </td>
+                                <td data-label="Santri">{{ $item->active_members_count }}</td>
                                 <td data-label="">
-                                    <a href="{{ route('ketua.halaqah.show', $item) }}" class="ui-link">Kelola</a>
+                                    <a href="{{ route('ketua.halaqah.edit', $item) }}" class="ui-link">Ubah</a>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="px-5 py-8 text-center text-slate-500">Belum ada halaqah.</td></tr>
+                            <tr><td colspan="5" class="px-5 py-8 text-center text-slate-500">Belum ada kelas. Buat kelas untuk mengatur jadwal pembelajaran.</td></tr>
                         @endempty
                     </tbody>
                 </table>

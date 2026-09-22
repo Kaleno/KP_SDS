@@ -13,10 +13,6 @@ class PortalAccess
             return (int) $user->santriProfile?->id === (int) $santri->id;
         }
 
-        if ($user->hasRole(Role::OrangTua)) {
-            return $user->children()->where('santri_profiles.id', $santri->id)->exists();
-        }
-
         return false;
     }
 

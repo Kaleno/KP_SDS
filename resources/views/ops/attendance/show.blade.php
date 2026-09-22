@@ -13,7 +13,7 @@
     <div class="max-w-3xl">
         @if ($session->attendances->isEmpty())
             <x-empty>
-                Belum ada anggota aktif di halaqah ini. Minta Ketua menambahkan santri.
+                Belum ada santri aktif. Minta Ketua menambahkan santri.
             </x-empty>
         @else
             @php

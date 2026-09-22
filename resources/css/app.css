@@ -6,7 +6,7 @@
 
 @layer base {
     html {
-        scroll-behavior: smooth;
+        scrollbar-gutter: stable;
         -webkit-tap-highlight-color: transparent;
     }
 
@@ -69,6 +69,28 @@
     .ui-input {
         @apply block w-full rounded-xl border-slate-200 bg-white/80 text-base text-slate-800 shadow-none placeholder:text-slate-400
             focus:border-teal-600 focus:ring-4 focus:ring-teal-700/10 min-h-12;
+    }
+
+    .ui-password {
+        position: relative;
+    }
+
+    .ui-password > .ui-input {
+        padding-inline-end: 2.75rem;
+    }
+
+    .ui-password-toggle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 10;
+        display: inline-flex;
+        height: 100%;
+        align-items: center;
+        padding-inline-end: 0.75rem;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
     }
 
     .ui-label {
@@ -206,6 +228,24 @@
 
     .peer:checked + .ui-choice-alfa {
         @apply border-rose-600 bg-rose-600 text-white hover:border-rose-700 hover:bg-rose-700;
+    }
+
+    .ui-content-scroll {
+        min-width: 0;
+    }
+
+    @media (min-width: 1024px) {
+        .ui-content-scroll {
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-gutter: stable;
+        }
+    }
+
+    .sidebar-nav {
+        scrollbar-gutter: stable;
+        scrollbar-width: thin;
     }
 
     .nav-item {

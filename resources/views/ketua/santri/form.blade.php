@@ -39,6 +39,28 @@
             <x-text-input id="birth_date" name="birth_date" type="date" class="mt-1.5" :value="old('birth_date', $santri?->birth_date?->format('Y-m-d'))" />
         </div>
         <div>
+            <x-input-label for="parent_name" value="Nama orang tua" />
+            <x-text-input id="parent_name" name="parent_name" class="mt-1.5" :value="old('parent_name', $santri?->parent_name)" />
+            <x-input-error class="mt-2" :messages="$errors->get('parent_name')" />
+        </div>
+        <div>
+            <x-input-label for="school_level" value="Sekolah" />
+            <select id="school_level" name="school_level" class="mt-1.5 ui-input">
+                <option value="">—</option>
+                @foreach (\App\Enums\SchoolLevel::ordered() as $level)
+                    <option value="{{ $level->value }}" @selected(old('school_level', $santri?->school_level?->value) === $level->value)>{{ $level->label() }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <x-input-label for="track" value="Jalur mengaji" />
+            <select id="track" name="track" class="mt-1.5 ui-input">
+                @foreach (\App\Enums\SantriTrack::cases() as $track)
+                    <option value="{{ $track->value }}" @selected(old('track', $santri?->track?->value ?? 'alquran') === $track->value)>{{ $track->label() }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
             <x-input-label for="status" value="Status" />
             <select id="status" name="status" class="mt-1.5 ui-input">
                 @foreach (\App\Enums\SantriStatus::cases() as $status)

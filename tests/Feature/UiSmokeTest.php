@@ -35,21 +35,23 @@ class UiSmokeTest extends TestCase
     {
         $fx = $this->smokeFixture();
 
-        $this->actingAs($fx['ketua'])->get(route('dashboard'))->assertOk()->assertSee('Halaqah aktif');
+        $this->actingAs($fx['ketua'])->get(route('dashboard'))->assertOk()->assertSee('Kelas aktif');
         $this->actingAs($fx['ketua'])->get(route('ketua.academic-years.index'))->assertOk();
-        $this->actingAs($fx['ketua'])->get(route('ketua.locations.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ketua.ustaz.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ketua.santri.index'))->assertOk()->assertSee('Ahmad Fauzi');
-        $this->actingAs($fx['ketua'])->get(route('ketua.orang-tua.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ketua.halaqah.index'))->assertOk();
-        $this->actingAs($fx['ketua'])->get(route('ketua.halaqah.show', $fx['halaqah']))->assertOk();
+        $this->actingAs($fx['ketua'])->get(route('ketua.halaqah.show', $fx['halaqah']))->assertRedirect(route('ketua.halaqah.edit', $fx['halaqah']));
+        $this->actingAs($fx['ketua'])->get(route('ketua.registrations.index'))->assertOk();
+        $this->actingAs($fx['ketua'])->get(route('ketua.holidays.index'))->assertOk();
+        $this->actingAs($fx['ketua'])->get(route('ketua.finance.index'))->assertOk()->assertSee('Biaya SPP bulanan');
         $this->actingAs($fx['ketua'])->get(route('ops.attendance.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ops.setoran.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ops.setoran.index', ['date_from' => 'bukan-tanggal']))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ops.setoran.index', ['date_from' => '2026-02-31']))->assertOk();
+        $this->actingAs($fx['ketua'])->get(route('ops.spp.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('laporan.attendance.index', ['date_from' => 'bukan-tanggal']))->assertOk();
-        $this->actingAs($fx['ketua'])->get(route('ketua.setup.create'))->assertOk()->assertSee('Siapkan halaqah');
-        $this->actingAs($fx['ketua'])->get(route('ops.setoran.create'))->assertOk();
+        $this->actingAs($fx['ketua'])->get(route('ketua.setup.create'))->assertRedirect(route('ketua.halaqah.create'));
+        $this->actingAs($fx['ketua'])->get(route('ops.setoran.create'))->assertOk()->assertSee('id="ayah_start"', false);
         $this->actingAs($fx['ketua'])->get(route('laporan.progress.index'))->assertOk()->assertSee('4.73%');
         $this->actingAs($fx['ketua'])->get(route('laporan.progress.show', $fx['santri'][0]))->assertOk()->assertSee('7 / 6236');
         $this->actingAs($fx['ketua'])->get(route('laporan.attendance.index'))->assertOk();
@@ -84,20 +86,11 @@ class UiSmokeTest extends TestCase
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 7,
-            'status' => SetoranStatus::Ulang->value,
+            'status' => SetoranStatus::Mengulang->value,
         ])->assertRedirect(route('ops.setoran.index'));
 
         $portal = $this->actingAs($fx['santri'][0]->user)->get(route('portal.home'));
         $portal->assertOk()->assertSee('4.73%')->assertSee('Al-Fatihah')->assertSee('Hadir')->assertDontSee('Simpan setoran');
-
-        $this->actingAs($fx['parent'])
-            ->get(route('portal.home', ['anak' => $fx['santri'][0]->id]))
-            ->assertOk()
-            ->assertSee('4.73%');
-
-        $this->actingAs($fx['parent'])
-            ->get(route('portal.home', ['anak' => $fx['santri'][2]->id]))
-            ->assertForbidden();
 
         $this->actingAs($fx['admin'])->get(route('super-admin.ketua.index'))->assertOk();
         $this->actingAs($fx['admin'])->get(route('ketua.santri.index'))->assertForbidden();
@@ -109,7 +102,6 @@ class UiSmokeTest extends TestCase
      *     admin: User,
      *     ketua: User,
      *     ustaz: User,
-     *     parent: User,
      *     halaqah: Halaqah,
      *     schedule: Schedule,
      *     santri: list<SantriProfile>
@@ -119,7 +111,7 @@ class UiSmokeTest extends TestCase
     {
         $admin = $this->userWithRole(Role::SuperAdmin, ['username' => 'superadmin']);
         $ketua = $this->userWithRole(Role::Ketua, ['username' => 'ketua']);
-        $ustaz = $this->userWithRole(Role::Ustaz, ['username' => 'ustaz1']);
+        $ustaz = $this->userWithRole(Role::KetuaPengajar, ['username' => 'ustaz1']);
         $year = AcademicYear::query()->create([
             'name' => '2026/2027',
             'start_date' => '2026-07-01',
@@ -146,9 +138,6 @@ class UiSmokeTest extends TestCase
             $santri[] = $profile;
         }
 
-        $parent = $this->userWithRole(Role::OrangTua, ['username' => 'ortu1']);
-        $parent->children()->sync([$santri[0]->id, $santri[1]->id]);
-
         $schedule = Schedule::query()->create([
             'halaqah_id' => $halaqah->id,
             'location_id' => $location->id,
@@ -167,10 +156,10 @@ class UiSmokeTest extends TestCase
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 7,
-            'status' => SetoranStatus::Lancar,
+            'status' => SetoranStatus::Lulus,
         ]);
 
-        return compact('admin', 'ketua', 'ustaz', 'parent', 'halaqah', 'schedule', 'santri');
+        return compact('admin', 'ketua', 'ustaz', 'halaqah', 'schedule', 'santri');
     }
 
     private function userWithRole(string $role, array $attrs = []): User

@@ -34,7 +34,7 @@ class HafalanProgressTest extends TestCase
         $fx = $this->progressFixture();
         $service = app(HafalanProgress::class);
 
-        $this->storeSetoran($fx, $fx['santri'], 1, 1, 7, SetoranStatus::Lancar);
+        $this->storeSetoran($fx, $fx['santri'], 1, 1, 7, SetoranStatus::Lulus);
 
         $first = $service->forSantri($fx['santri'], $fx['year']);
         $this->assertSame(7, $first->uniqueAyahCount);
@@ -45,13 +45,13 @@ class HafalanProgressTest extends TestCase
         $this->assertSame(1, $first->currentJuz()?->number);
         $this->assertSame(0, $first->completedJuzCount());
 
-        $this->storeSetoran($fx, $fx['santri'], 1, 1, 7, SetoranStatus::Lancar, now()->addDay()->toDateString());
+        $this->storeSetoran($fx, $fx['santri'], 1, 1, 7, SetoranStatus::Lulus, now()->addDay()->toDateString());
         $second = $service->forSantri($fx['santri'], $fx['year']);
         $this->assertSame(7, $second->uniqueAyahCount);
         $this->assertSame($first->totalPercent, $second->totalPercent);
         $this->assertSame($first->juz(1)->percent, $second->juz(1)->percent);
 
-        $this->storeSetoran($fx, $fx['santri'], 2, 1, 5, SetoranStatus::Ulang);
+        $this->storeSetoran($fx, $fx['santri'], 2, 1, 5, SetoranStatus::Mengulang);
         $third = $service->forSantri($fx['santri'], $fx['year']);
         $this->assertSame(7, $third->uniqueAyahCount);
         $this->assertSame($first->totalPercent, $third->totalPercent);
@@ -62,8 +62,8 @@ class HafalanProgressTest extends TestCase
         $fx = $this->progressFixture();
         $service = app(HafalanProgress::class);
 
-        $this->storeSetoran($fx, $fx['santri'], 1, 1, 3, SetoranStatus::Lancar);
-        $this->storeSetoran($fx, $fx['santri'], 1, 3, 7, SetoranStatus::Lancar, now()->addDay()->toDateString());
+        $this->storeSetoran($fx, $fx['santri'], 1, 1, 3, SetoranStatus::Lulus);
+        $this->storeSetoran($fx, $fx['santri'], 1, 3, 7, SetoranStatus::Lulus, now()->addDay()->toDateString());
 
         $result = $service->forSantri($fx['santri'], $fx['year']);
         $this->assertSame(7, $result->uniqueAyahCount);
@@ -75,7 +75,7 @@ class HafalanProgressTest extends TestCase
      */
     private function progressFixture(): array
     {
-        $ustaz = $this->userWithRole(Role::Ustaz);
+        $ustaz = $this->userWithRole(Role::KetuaPengajar);
         $year = AcademicYear::query()->create([
             'name' => '2026/2027',
             'start_date' => '2026-07-01',

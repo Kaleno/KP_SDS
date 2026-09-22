@@ -12,17 +12,27 @@
             ['label' => 'Beranda', 'route' => 'dashboard', 'match' => 'dashboard', 'icon' => 'home', 'group' => 'Utama', 'primary' => true],
             ['label' => 'Absensi', 'route' => 'ops.attendance.index', 'match' => 'ops.attendance.*', 'icon' => 'check-circle', 'group' => 'Operasional', 'primary' => true],
             ['label' => 'Setoran', 'route' => 'ops.setoran.index', 'match' => 'ops.setoran.*', 'icon' => 'book', 'group' => 'Operasional', 'primary' => true],
+            ['label' => 'SPP', 'route' => 'ops.spp.index', 'match' => 'ops.spp.*', 'icon' => 'cash', 'group' => 'Operasional', 'primary' => false],
             ['label' => 'Progress', 'route' => 'laporan.progress.index', 'match' => 'laporan.progress.*', 'icon' => 'chart', 'group' => 'Laporan', 'primary' => false],
             ['label' => 'Rekap', 'route' => 'laporan.attendance.index', 'match' => 'laporan.attendance.*', 'icon' => 'clipboard', 'group' => 'Laporan', 'primary' => false],
-            ['label' => 'Siapkan', 'route' => 'ketua.setup.create', 'match' => 'ketua.setup.*', 'icon' => 'spark', 'group' => 'Master data', 'primary' => false],
-            ['label' => 'Tahun', 'route' => 'ketua.academic-years.index', 'match' => 'ketua.academic-years.*', 'icon' => 'calendar', 'group' => 'Master data', 'primary' => false],
-            ['label' => 'Lokasi', 'route' => 'ketua.locations.index', 'match' => 'ketua.locations.*', 'icon' => 'map', 'group' => 'Master data', 'primary' => false],
-            ['label' => 'Ustaz', 'route' => 'ketua.ustaz.index', 'match' => 'ketua.ustaz.*', 'icon' => 'academic', 'group' => 'Master data', 'primary' => false],
+            ['label' => 'Kelas', 'route' => 'ketua.halaqah.index', 'match' => 'ketua.halaqah.*', 'icon' => 'layers', 'group' => 'Master data', 'primary' => false],
+            ['label' => 'Pengajar', 'route' => 'ketua.ustaz.index', 'match' => 'ketua.ustaz.*', 'icon' => 'academic', 'group' => 'Master data', 'primary' => false],
             ['label' => 'Santri', 'route' => 'ketua.santri.index', 'match' => 'ketua.santri.*', 'icon' => 'users', 'group' => 'Master data', 'primary' => false],
-            ['label' => 'Ortu', 'route' => 'ketua.orang-tua.index', 'match' => 'ketua.orang-tua.*', 'icon' => 'user', 'group' => 'Master data', 'primary' => false],
-            ['label' => 'Halaqah', 'route' => 'ketua.halaqah.index', 'match' => 'ketua.halaqah.*', 'icon' => 'layers', 'group' => 'Master data', 'primary' => false],
+            ['label' => 'Daftar', 'route' => 'ketua.registrations.index', 'match' => 'ketua.registrations.*', 'icon' => 'spark', 'group' => 'Master data', 'primary' => false],
+            ['label' => 'Tahun ajaran', 'route' => 'ketua.academic-years.index', 'match' => 'ketua.academic-years.*', 'icon' => 'calendar', 'group' => 'Master data', 'primary' => false],
+            ['label' => 'Libur', 'route' => 'ketua.holidays.index', 'match' => 'ketua.holidays.*', 'icon' => 'alert', 'group' => 'Master data', 'primary' => false],
+            ['label' => 'Kas', 'route' => 'ketua.finance.index', 'match' => 'ketua.finance.*', 'icon' => 'cash', 'group' => 'Keuangan', 'primary' => false],
         ];
-    } elseif ($user->hasRole(\App\Support\Role::Ustaz)) {
+    } elseif ($user->hasRole(\App\Support\Role::KetuaPengajar)) {
+        $links = [
+            ['label' => 'Beranda', 'route' => 'dashboard', 'match' => 'dashboard', 'icon' => 'home', 'group' => 'Utama', 'primary' => true],
+            ['label' => 'Absensi', 'route' => 'ops.attendance.index', 'match' => 'ops.attendance.*', 'icon' => 'check-circle', 'group' => 'Operasional', 'primary' => true],
+            ['label' => 'Setoran', 'route' => 'ops.setoran.index', 'match' => 'ops.setoran.*', 'icon' => 'book', 'group' => 'Operasional', 'primary' => true],
+            ['label' => 'SPP', 'route' => 'ops.spp.index', 'match' => 'ops.spp.*', 'icon' => 'cash', 'group' => 'Operasional', 'primary' => false],
+            ['label' => 'Progress', 'route' => 'laporan.progress.index', 'match' => 'laporan.progress.*', 'icon' => 'chart', 'group' => 'Laporan', 'primary' => false],
+            ['label' => 'Rekap', 'route' => 'laporan.attendance.index', 'match' => 'laporan.attendance.*', 'icon' => 'clipboard', 'group' => 'Laporan', 'primary' => false],
+        ];
+    } elseif ($user->hasRole(\App\Support\Role::Pengajar)) {
         $links = [
             ['label' => 'Beranda', 'route' => 'dashboard', 'match' => 'dashboard', 'icon' => 'home', 'group' => 'Utama', 'primary' => true],
             ['label' => 'Absensi', 'route' => 'ops.attendance.index', 'match' => 'ops.attendance.*', 'icon' => 'check-circle', 'group' => 'Operasional', 'primary' => true],
@@ -30,9 +40,10 @@
             ['label' => 'Progress', 'route' => 'laporan.progress.index', 'match' => 'laporan.progress.*', 'icon' => 'chart', 'group' => 'Laporan', 'primary' => false],
             ['label' => 'Rekap', 'route' => 'laporan.attendance.index', 'match' => 'laporan.attendance.*', 'icon' => 'clipboard', 'group' => 'Laporan', 'primary' => false],
         ];
-    } elseif ($user->hasRole(\App\Support\Role::Santri) || $user->hasRole(\App\Support\Role::OrangTua)) {
+    } elseif ($user->hasRole(\App\Support\Role::Santri)) {
         $links = [
-            ['label' => 'Beranda', 'route' => 'portal.home', 'match' => 'portal.*', 'icon' => 'home', 'group' => 'Utama', 'primary' => true],
+            ['label' => 'Beranda', 'route' => 'portal.home', 'match' => 'portal.home', 'icon' => 'home', 'group' => 'Utama', 'primary' => true],
+            ['label' => 'Profil', 'route' => 'portal.profile.edit', 'match' => 'portal.profile.*', 'icon' => 'user', 'group' => 'Utama', 'primary' => true],
         ];
     } else {
         $links = [
@@ -49,16 +60,16 @@
     $initials = collect(explode(' ', $user->name))->map(fn ($part) => mb_substr($part, 0, 1))->take(2)->implode('');
 @endphp
 
-<aside class="hidden lg:flex lg:flex-col lg:w-72 lg:shrink-0 lg:sticky lg:top-0 lg:h-screen bg-teal-950 text-teal-50">
+<aside class="hidden lg:flex lg:h-full lg:w-72 lg:shrink-0 lg:flex-col bg-teal-950 text-teal-50">
     <div class="px-6 py-6 flex items-center gap-3">
-        <x-application-logo class="h-11 w-11 shrink-0" />
+        <x-application-logo class="h-12 w-12 shrink-0" />
         <div class="min-w-0">
             <p class="text-[11px] uppercase tracking-[0.2em] text-gold-300">KP SDS</p>
-            <p class="font-display text-lg leading-tight text-white truncate">Monitoring Hafalan</p>
+            <p class="font-display text-lg leading-tight text-white truncate">{{ config('app.name') }}</p>
         </div>
     </div>
 
-    <nav class="flex-1 px-3 pb-4 space-y-5 overflow-y-auto">
+    <nav x-ref="sidebarNav" class="sidebar-nav min-h-0 flex-1 space-y-5 overflow-y-auto px-3 pb-4">
         @foreach ($grouped as $group => $items)
             <div>
                 <p class="px-3 mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-teal-200/50">{{ $group }}</p>
@@ -94,9 +105,9 @@
 
 <div class="lg:hidden fixed top-0 inset-x-0 z-30 px-3 pt-3">
     <div class="flex items-center gap-2.5 rounded-2xl bg-teal-950/95 px-3 py-2.5 text-white shadow-lift backdrop-blur">
-        <x-application-logo class="h-9 w-9 shrink-0" />
+        <x-application-logo class="h-10 w-10 shrink-0" />
         <div class="min-w-0">
-            <p class="text-sm font-semibold truncate">Monitoring Hafalan</p>
+            <p class="text-sm font-semibold truncate">{{ config('app.name') }}</p>
             <p class="text-[11px] text-teal-100/80 truncate">{{ $user->name }}</p>
         </div>
     </div>
@@ -131,20 +142,37 @@
          x-transition:leave-end="translate-y-full">
         <div class="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-300"></div>
         <p class="font-display text-lg text-teal-950">Menu</p>
-        <p class="text-sm text-slate-500 mb-4">{{ $user->name }}{{ $roleName ? ' · '.\App\Support\Role::label($roleName) : '' }}</p>
-        <div class="grid grid-cols-2 gap-2">
-            @foreach ($links as $link)
-                <a href="{{ route($link['route']) }}"
-                   class="flex items-center gap-2 rounded-2xl border px-3 py-3 text-sm font-medium {{ request()->routeIs($link['match']) ? 'border-teal-700 bg-teal-800 text-white' : 'border-slate-200 bg-white text-slate-700' }}">
-                    <x-icon :name="$link['icon']" class="h-4 w-4 shrink-0" />
-                    {{ $link['label'] }}
-                </a>
+        <p class="text-sm text-slate-500 mb-4">
+            {{ $user->name }}
+            @if ($roleName && \App\Support\Role::label($roleName) !== $user->name)
+                · {{ \App\Support\Role::label($roleName) }}
+            @endif
+        </p>
+        <div class="max-h-[60vh] space-y-4 overflow-y-auto pr-1">
+            @foreach ($grouped as $group => $items)
+                <div>
+                    <p class="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{{ $group }}</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        @foreach ($items as $link)
+                            <a href="{{ route($link['route']) }}"
+                               class="flex items-center gap-2 rounded-2xl border px-3 py-3 text-sm font-medium {{ request()->routeIs($link['match']) ? 'border-teal-700 bg-teal-800 text-white' : 'border-slate-200 bg-white text-slate-700' }}">
+                                <x-icon :name="$link['icon']" class="h-4 w-4 shrink-0" />
+                                {{ $link['label'] }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
             @endforeach
-            <a href="{{ route('profile.edit') }}"
-               class="flex items-center gap-2 rounded-2xl border px-3 py-3 text-sm font-medium {{ request()->routeIs('profile.*') ? 'border-teal-700 bg-teal-800 text-white' : 'border-slate-200 bg-white text-slate-700' }}">
-                <x-icon name="user" class="h-4 w-4 shrink-0" />
-                Profil
-            </a>
+            <div>
+                <p class="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Akun</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <a href="{{ route('profile.edit') }}"
+                       class="flex items-center gap-2 rounded-2xl border px-3 py-3 text-sm font-medium {{ request()->routeIs('profile.*') ? 'border-teal-700 bg-teal-800 text-white' : 'border-slate-200 bg-white text-slate-700' }}">
+                        <x-icon name="user" class="h-4 w-4 shrink-0" />
+                        Profil
+                    </a>
+                </div>
+            </div>
         </div>
         <form method="POST" action="{{ route('logout') }}" class="mt-3" data-nav="mobile-logout">
             @csrf

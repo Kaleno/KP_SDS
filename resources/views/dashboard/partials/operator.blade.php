@@ -10,21 +10,21 @@
         <div class="stat-card">
             <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-50 text-teal-800"><x-icon name="layers" /></span>
             <p class="mt-4 font-display text-3xl font-semibold text-teal-950">{{ $stats['halaqah'] }}</p>
-            <p class="text-sm text-slate-500">Halaqah aktif</p>
+            <p class="text-sm text-slate-500">Kelas aktif</p>
             <p class="mt-1 text-xs text-slate-400">{{ $stats['ustaz'] }} ustaz pembimbing</p>
         </div>
         <div class="stat-card">
             <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gold-50 text-gold-700"><x-icon name="users" /></span>
             <p class="mt-4 font-display text-3xl font-semibold text-teal-950">{{ $stats['santriAktif'] }}</p>
             <p class="text-sm text-slate-500">Santri aktif</p>
-            <p class="mt-1 text-xs text-slate-400">{{ $stats['anggotaHalaqah'] }} anggota halaqah</p>
+            <p class="mt-1 text-xs text-slate-400">{{ $stats['anggotaHalaqah'] }} santri di kelas</p>
         </div>
     @else
         <div class="stat-card">
             <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gold-50 text-gold-700"><x-icon name="users" /></span>
             <p class="mt-4 font-display text-3xl font-semibold text-teal-950">{{ $stats['santriAktif'] }}</p>
             <p class="text-sm text-slate-500">Anggota aktif</p>
-            <p class="mt-1 text-xs text-slate-400">{{ $stats['halaqah'] }} halaqah dibimbing</p>
+            <p class="mt-1 text-xs text-slate-400">{{ $stats['halaqah'] }} kelas dibimbing</p>
         </div>
         <div class="stat-card">
             <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-50 text-teal-800"><x-icon name="calendar" /></span>
@@ -106,6 +106,39 @@
     </div>
 @endif
 
+@if ($isKetua && ($sppSummary ?? null))
+    <section class="space-y-3">
+        <div class="flex items-center justify-between gap-3">
+            <h2 class="ui-section-title">Ringkasan SPP</h2>
+            <a href="{{ route('ops.spp.index') }}" class="text-sm font-semibold text-teal-800">Kelola SPP</a>
+        </div>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div class="ui-card p-4">
+                <p class="text-xs text-slate-500">Sudah bayar bulan ini</p>
+                <p class="mt-1 font-display text-2xl font-semibold text-teal-800">
+                    {{ $sppSummary['paidThisMonth'] }}/{{ $sppSummary['paidThisMonth'] + $sppSummary['unpaidThisMonth'] }}
+                </p>
+            </div>
+            <div class="ui-card p-4">
+                <p class="text-xs text-slate-500">Belum bayar bulan ini</p>
+                <p class="mt-1 font-display text-2xl font-semibold {{ $sppSummary['unpaidThisMonth'] > 0 ? 'text-amber-800' : 'text-teal-950' }}">
+                    {{ $sppSummary['unpaidThisMonth'] }}
+                </p>
+                @if ($sppSummary['unpaidThisMonth'] > 0)
+                    <p class="mt-1 text-xs text-slate-500">Rp {{ number_format($sppSummary['unpaidThisMonthAmount'], 0, ',', '.') }}</p>
+                @endif
+            </div>
+            <a href="{{ route('ops.spp.index', ['filter' => 'nunggak']) }}" class="ui-card p-4">
+                <p class="text-xs text-slate-500">Nunggak &gt;1 bulan</p>
+                <p class="mt-1 font-display text-2xl font-semibold {{ $sppSummary['deepArrears'] > 0 ? 'text-rose-800' : 'text-teal-950' }}">
+                    {{ $sppSummary['deepArrears'] }}
+                </p>
+                <p class="mt-1 text-xs text-teal-800">Lihat daftar</p>
+            </a>
+        </div>
+    </section>
+@endif
+
 @php $week = $overview['week']; @endphp
 <section class="space-y-3">
     <div class="flex items-center justify-between gap-3">
@@ -178,7 +211,7 @@
                     <p class="text-sm text-slate-500">
                         {{ $slot->timeRange() }} · {{ $slot->location->name }}
                         @if ($isKetua)
-                            · Ustaz {{ $slot->halaqah->ustaz->name }}
+                            · {{ $slot->halaqah->ustaz->name }}
                         @endif
                     </p>
                 </div>
@@ -279,7 +312,7 @@
 @if ($overview['halaqahRows']->isNotEmpty())
     <section class="space-y-3">
         <div class="flex items-center justify-between gap-3">
-            <h2 class="ui-section-title">{{ $isKetua ? 'Halaqah aktif' : 'Halaqah Anda' }}</h2>
+            <h2 class="ui-section-title">{{ $isKetua ? 'Kelas aktif' : 'Kelas Anda' }}</h2>
             @if ($isKetua)
                 <a href="{{ route('ketua.halaqah.index') }}" class="text-sm font-semibold text-teal-800">Kelola</a>
             @else
@@ -290,7 +323,7 @@
             @foreach ($overview['halaqahRows'] as $row)
                 <div class="ui-card p-4 sm:p-5">
                     <p class="font-display text-lg font-semibold text-teal-950">{{ $row['halaqah']->name }}</p>
-                    <p class="text-sm text-slate-500">Ustaz {{ $row['halaqah']->ustaz->name }}</p>
+                    <p class="text-sm text-slate-500">{{ $row['halaqah']->ustaz->name }}</p>
                     <div class="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
                         <div class="rounded-xl bg-cream-100 py-2">
                             <p class="font-semibold text-teal-950">{{ $row['members'] }}</p>
