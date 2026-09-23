@@ -114,11 +114,11 @@ class LaporanTest extends TestCase
         $outsider = $this->userWithRole(Role::Pengajar, ['username' => 'ustaz2']);
 
         $this->actingAs($outsider)
-            ->get(route('laporan.progress.show', $fx['santri'][0]))
+            ->get(route('laporan.progress.bacaan.show', $fx['santri'][0]))
             ->assertForbidden();
 
         $this->actingAs($fx['ustaz'])
-            ->get(route('laporan.progress.show', $fx['santri'][0]))
+            ->get(route('laporan.progress.bacaan.show', $fx['santri'][0]))
             ->assertOk()
             ->assertSee('Ahmad Fauzi');
     }
@@ -163,7 +163,7 @@ class LaporanTest extends TestCase
             ->assertDontSee('Halaqah Lama');
     }
 
-    public function test_progress_page_shows_juz_one_after_fatihah_lancar(): void
+    public function test_progress_bacaan_shows_active_juz_after_fatihah_lancar(): void
     {
         $fx = $this->opsFixture();
         $this->seed(QuranSeeder::class);
@@ -173,6 +173,9 @@ class LaporanTest extends TestCase
             'halaqah_id' => $fx['halaqah']->id,
             'ustaz_user_id' => $fx['ustaz']->id,
             'academic_year_id' => $fx['year']->id,
+            'activity_type' => 'ngaji',
+            'category' => 'bacaan',
+            'subtype' => 'alquran',
             'quran_surah_id' => 1,
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
@@ -181,16 +184,59 @@ class LaporanTest extends TestCase
         ]);
 
         $this->actingAs($fx['ketua'])
-            ->get(route('laporan.progress.show', $fx['santri'][0]))
+            ->get(route('laporan.progress.bacaan.show', $fx['santri'][0]))
             ->assertOk()
             ->assertSee('4.73%')
-            ->assertSee('7 / 6236');
+            ->assertSee('Al-Fatihah')
+            ->assertSee('Juz 1');
 
         $this->actingAs($fx['ketua'])
-            ->get(route('laporan.progress.index'))
+            ->get(route('laporan.progress.bacaan.index'))
             ->assertOk()
             ->assertSee('4.73%')
             ->assertSee('Juz 1 dikerjakan');
+    }
+
+    public function test_progress_hafalan_shows_doa_and_juz30(): void
+    {
+        $fx = $this->opsFixture();
+        $this->seed(QuranSeeder::class);
+
+        HafalanSetoran::query()->create([
+            'santri_id' => $fx['santri'][0]->id,
+            'halaqah_id' => $fx['halaqah']->id,
+            'ustaz_user_id' => $fx['ustaz']->id,
+            'academic_year_id' => $fx['year']->id,
+            'activity_type' => 'hafalan',
+            'category' => 'hafalan',
+            'subtype' => 'doa',
+            'doa_name' => 'Doa sebelum makan',
+            'setoran_date' => now()->toDateString(),
+            'status' => SetoranStatus::Mengulang,
+        ]);
+
+        HafalanSetoran::query()->create([
+            'santri_id' => $fx['santri'][0]->id,
+            'halaqah_id' => $fx['halaqah']->id,
+            'ustaz_user_id' => $fx['ustaz']->id,
+            'academic_year_id' => $fx['year']->id,
+            'activity_type' => 'hafalan',
+            'category' => 'hafalan',
+            'subtype' => 'juz30',
+            'quran_surah_id' => 78,
+            'ayah_start' => 1,
+            'ayah_end' => 5,
+            'setoran_date' => now()->toDateString(),
+            'status' => SetoranStatus::Lulus,
+        ]);
+
+        $this->actingAs($fx['ketua'])
+            ->get(route('laporan.progress.hafalan.show', $fx['santri'][0]))
+            ->assertOk()
+            ->assertSee('Doa sebelum makan')
+            ->assertSee('Mengulang')
+            ->assertSee('An-Naba')
+            ->assertSee('Juz 30');
     }
 
     /**

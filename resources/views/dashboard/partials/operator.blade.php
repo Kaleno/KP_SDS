@@ -223,7 +223,7 @@
             @if ($isKetua)
                 <a href="{{ route('ketua.halaqah.index') }}" class="text-sm font-semibold text-teal-800">Kelola</a>
             @else
-                <a href="{{ route('laporan.progress.index') }}" class="text-sm font-semibold text-teal-800">Progress juz</a>
+                <a href="{{ route('laporan.progress.index') }}" class="text-sm font-semibold text-teal-800">Progress</a>
             @endif
         </div>
         <div class="grid gap-3 sm:grid-cols-2">

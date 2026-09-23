@@ -35,6 +35,8 @@ class SetoranIqroTest extends TestCase
         $this->actingAs($fx['ketua'])->post(route('ops.setoran.store'), [
             'santri_id' => $fx['santri']->id,
             'setoran_date' => now()->toDateString(),
+            'category' => 'bacaan',
+            'subtype' => 'iqro',
             'iqro_level' => 2,
             'iqro_page' => 15,
             'status' => SetoranStatus::Lulus->value,
@@ -68,6 +70,8 @@ class SetoranIqroTest extends TestCase
             'ustaz_user_id' => $fx['ketua']->id,
             'academic_year_id' => $fx['halaqah']->academic_year_id,
             'activity_type' => 'ngaji',
+            'category' => 'bacaan',
+            'subtype' => 'iqro',
             'iqro_level' => 1,
             'iqro_page' => 5,
             'quran_surah_id' => null,
@@ -79,6 +83,8 @@ class SetoranIqroTest extends TestCase
 
         $this->actingAs($fx['ketua'])->put(route('ops.setoran.update', $setoran), [
             'setoran_date' => now()->toDateString(),
+            'category' => 'bacaan',
+            'subtype' => 'iqro',
             'iqro_level' => 1,
             'iqro_page' => 8,
             'status' => SetoranStatus::Mengulang->value,

@@ -79,6 +79,39 @@ class OperasionalTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_ketua_pengajar_can_open_another_pengajar_session(): void
+    {
+        $fx = $this->opsFixture();
+        $other = $this->userWithRole(Role::Pengajar, ['username' => 'pengajar2', 'name' => 'Pengajar Dua']);
+        $otherHalaqah = Halaqah::query()->create([
+            'academic_year_id' => $fx['halaqah']->academic_year_id,
+            'ustaz_user_id' => $other->id,
+            'name' => 'Kelas Pengajar Lain',
+            'is_active' => true,
+        ]);
+        $otherSchedule = Schedule::query()->create([
+            'halaqah_id' => $otherHalaqah->id,
+            'day_of_week' => now()->isoWeekday(),
+            'start_time' => '07:00:00',
+            'end_time' => '08:30:00',
+            'is_active' => true,
+        ]);
+        $session = AttendanceSession::query()->create([
+            'schedule_id' => $otherSchedule->id,
+            'session_date' => now()->toDateString(),
+            'opened_by_user_id' => $other->id,
+        ]);
+
+        $this->actingAs($fx['ustaz'])
+            ->get(route('ops.attendance.index'))
+            ->assertOk()
+            ->assertSee('Isi absensi');
+
+        $this->actingAs($fx['ustaz'])
+            ->get(route('ops.attendance.show', $session))
+            ->assertOk();
+    }
+
     public function test_attendance_session_page_renders_status_choice_styles(): void
     {
         $fx = $this->opsFixture();
@@ -211,6 +244,8 @@ class OperasionalTest extends TestCase
 
         $this->actingAs($fx['ustaz'])->post(route('ops.setoran.store'), [
             'santri_id' => $fx['santri'][0]->id,
+            'category' => 'bacaan',
+            'subtype' => 'alquran',
             'quran_surah_id' => 1,
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
@@ -221,6 +256,8 @@ class OperasionalTest extends TestCase
 
         $this->actingAs($fx['ustaz'])->post(route('ops.setoran.store'), [
             'santri_id' => $fx['santri'][1]->id,
+            'category' => 'bacaan',
+            'subtype' => 'alquran',
             'quran_surah_id' => 1,
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
@@ -232,6 +269,8 @@ class OperasionalTest extends TestCase
         $this->assertSame(SetoranStatus::Lulus, $setoran->status);
 
         $this->actingAs($fx['ustaz'])->put(route('ops.setoran.update', $setoran), [
+            'category' => 'bacaan',
+            'subtype' => 'alquran',
             'quran_surah_id' => 1,
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
@@ -251,6 +290,8 @@ class OperasionalTest extends TestCase
 
         $this->actingAs($fx['ustaz'])->post(route('ops.setoran.store'), [
             'santri_id' => $fx['santri'][0]->id,
+            'category' => 'bacaan',
+            'subtype' => 'alquran',
             'quran_surah_id' => 1,
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
@@ -268,7 +309,7 @@ class OperasionalTest extends TestCase
             ->get(route('ops.setoran.create', ['sesi' => $session->id]))
             ->assertOk()
             ->assertSee('Ahmad Fauzi')
-            ->assertSee('Cari nomor atau nama surat')
+            ->assertSee('Cari nomor, nama surat, atau juz')
             ->assertDontSee('Yusuf Maulana')
             ->assertDontSee('Hasan Basri');
     }
@@ -292,6 +333,8 @@ class OperasionalTest extends TestCase
 
         $this->actingAs($fx['ustaz'])->post(route('ops.setoran.store'), [
             'santri_id' => $fx['santri'][2]->id,
+            'category' => 'bacaan',
+            'subtype' => 'alquran',
             'quran_surah_id' => 1,
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
@@ -320,6 +363,8 @@ class OperasionalTest extends TestCase
         ])->assertRedirect(route('ops.setoran.create', ['sesi' => $session->id]));
 
         $payload = [
+            'category' => 'bacaan',
+            'subtype' => 'alquran',
             'quran_surah_id' => 1,
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
@@ -337,12 +382,12 @@ class OperasionalTest extends TestCase
             ->get(route('ops.setoran.create', ['sesi' => $session->id]))
             ->assertOk()
             ->assertSee('Hasan Basri')
-            ->assertDontSee('Ahmad Fauzi');
+            ->assertSee('Ahmad Fauzi');
 
         $this->actingAs($fx['ustaz'])->post(route('ops.setoran.store'), [
             ...$payload,
             'santri_id' => $fx['santri'][1]->id,
-        ])->assertRedirect(route('ops.setoran.index'));
+        ])->assertRedirect(route('ops.setoran.create', ['sesi' => $session->id]));
 
         $this->assertSame(2, HafalanSetoran::query()->count());
     }
@@ -378,6 +423,9 @@ class OperasionalTest extends TestCase
             'halaqah_id' => $fx['halaqah']->id,
             'ustaz_user_id' => $fx['ustaz']->id,
             'academic_year_id' => $fx['halaqah']->academic_year_id,
+            'activity_type' => 'ngaji',
+            'category' => 'bacaan',
+            'subtype' => 'alquran',
             'quran_surah_id' => 1,
             'setoran_date' => $date ?? now()->toDateString(),
             'ayah_start' => 1,

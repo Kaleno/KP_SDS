@@ -36,7 +36,11 @@
                     </div>
                 @empty
                     <x-empty>
-                        Tidak ada jadwal untuk {{ $dayLabel }}. Minta Ketua menambahkan jadwal kelas di hari ini.
+                        @if (! ($hasAssignedHalaqah ?? true))
+                            Belum ada kelas yang ditugaskan kepada Anda. Minta Ketua menugaskan Anda sebagai pengajar di menu Kelas.
+                        @else
+                            Tidak ada jadwal untuk {{ $dayLabel }}. Minta Ketua menambahkan jadwal kelas di hari ini.
+                        @endif
                     </x-empty>
                 @endforelse
             @endif

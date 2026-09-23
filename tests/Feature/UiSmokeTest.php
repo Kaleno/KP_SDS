@@ -51,8 +51,9 @@ class UiSmokeTest extends TestCase
         $this->actingAs($fx['ketua'])->get(route('laporan.attendance.index', ['date_from' => 'bukan-tanggal']))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ketua.setup.create'))->assertRedirect(route('ketua.halaqah.create'));
         $this->actingAs($fx['ketua'])->get(route('ops.setoran.create'))->assertOk()->assertSee('id="ayah_start"', false);
-        $this->actingAs($fx['ketua'])->get(route('laporan.progress.index'))->assertOk()->assertSee('4.73%');
-        $this->actingAs($fx['ketua'])->get(route('laporan.progress.show', $fx['santri'][0]))->assertOk()->assertSee('7 / 6236');
+        $this->actingAs($fx['ketua'])->get(route('laporan.progress.index'))->assertRedirect(route('laporan.progress.bacaan.index'));
+        $this->actingAs($fx['ketua'])->get(route('laporan.progress.bacaan.index'))->assertOk()->assertSee('4.73%')->assertSee('Bacaan')->assertSee('Hafalan');
+        $this->actingAs($fx['ketua'])->get(route('laporan.progress.bacaan.show', $fx['santri'][0]))->assertOk()->assertSee('Al-Fatihah');
         $this->actingAs($fx['ketua'])->get(route('laporan.attendance.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('profile.edit'))->assertOk();
 
@@ -75,18 +76,21 @@ class UiSmokeTest extends TestCase
             ->get(route('ops.setoran.create', ['sesi' => $session->id]))
             ->assertOk()
             ->assertSee('Hasan Basri')
-            ->assertSee('Cari nomor atau nama surat')
+            ->assertSee('Cari nomor, nama surat, atau juz')
             ->assertDontSee('Yusuf Maulana')
             ->assertDontSee('Ahmad Fauzi');
 
         $this->actingAs($fx['ustaz'])->post(route('ops.setoran.store'), [
             'santri_id' => $fx['santri'][1]->id,
+            'category' => 'bacaan',
+            'subtype' => 'alquran',
             'quran_surah_id' => 1,
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
             'ayah_end' => 7,
             'status' => SetoranStatus::Mengulang->value,
-        ])->assertRedirect(route('ops.setoran.index'));
+            'sesi' => $session->id,
+        ])->assertRedirect(route('ops.setoran.create', ['sesi' => $session->id]));
 
         $portal = $this->actingAs($fx['santri'][0]->user)->get(route('portal.home'));
         $portal->assertOk()->assertSee('4.73%')->assertSee('Al-Fatihah')->assertSee('Hadir')->assertDontSee('Simpan setoran');
@@ -149,6 +153,9 @@ class UiSmokeTest extends TestCase
             'halaqah_id' => $halaqah->id,
             'ustaz_user_id' => $ustaz->id,
             'academic_year_id' => $year->id,
+            'activity_type' => 'ngaji',
+            'category' => 'bacaan',
+            'subtype' => 'alquran',
             'quran_surah_id' => 1,
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,

@@ -6,6 +6,7 @@ use App\Models\Halaqah;
 use App\Models\SantriProfile;
 use App\Models\User;
 use App\Services\HafalanProgress;
+use App\Services\SetoranProgress;
 use App\Support\OperationalAccess;
 use App\Support\PortalAccess;
 use App\Support\Role;
@@ -20,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(OperationalAccess::class);
         $this->app->singleton(PortalAccess::class);
         $this->app->singleton(HafalanProgress::class);
+        $this->app->singleton(SetoranProgress::class);
     }
 
     public function boot(): void

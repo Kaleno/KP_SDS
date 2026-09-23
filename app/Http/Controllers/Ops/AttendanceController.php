@@ -52,6 +52,7 @@ class AttendanceController extends Controller
             'dayLabel' => WeekDay::label($day),
             'isOffDay' => $isOffDay,
             'offDayMessage' => $isOffDay ? $this->calendar->offDayMessage($today) : null,
+            'hasAssignedHalaqah' => $halaqahIds->isNotEmpty(),
             'showUstazOnSlots' => $todaySlots->count() > 1
                 && $user->hasAnyRole([Role::Ketua, Role::KetuaPengajar]),
         ]);

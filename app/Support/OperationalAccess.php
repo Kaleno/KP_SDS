@@ -18,11 +18,11 @@ class OperationalAccess
 
     public function canOperateHalaqah(User $user, Halaqah $halaqah): bool
     {
-        if ($user->hasRole(Role::Ketua)) {
+        if ($user->hasRole(Role::Ketua) || $user->hasRole(Role::KetuaPengajar)) {
             return true;
         }
 
-        return $user->hasAnyRole(Role::teaching())
+        return $user->hasRole(Role::Pengajar)
             && (int) $halaqah->ustaz_user_id === (int) $user->id;
     }
 

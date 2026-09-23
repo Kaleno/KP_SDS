@@ -15,7 +15,8 @@
         @else
             @php
                 $snapshot = $snapshot ?? null;
-                $currentJuz = $progress?->currentJuz();
+                $bacaanSnap = $bacaan['alquran'] ?? null;
+                $currentJuz = $bacaanSnap?->juz ?? $progress?->currentJuz();
                 $todayAttendance = $snapshot['todayAttendance'] ?? null;
                 $todaySlots = $snapshot['todaySlots'] ?? collect();
                 $todaySetoran = $snapshot['todaySetoran'] ?? collect();
@@ -48,27 +49,53 @@
                     @endif
                 </p>
                 <p class="mt-3 text-sm text-teal-100/75">
-                    Catatan hafalan dan kehadiranmu dari pengajar.
+                    Catatan bacaan, hafalan, dan kehadiranmu dari pengajar.
                     Anda hanya melihat, tidak mengubah data.
                 </p>
 
-                @if ($progress)
+                @if ($bacaanSnap)
                     <div class="mt-5 grid grid-cols-2 gap-3">
                         <div class="rounded-2xl bg-white/10 px-4 py-3">
-                            <p class="font-display text-3xl font-semibold text-gold-300">{{ $progress->uniqueAyahCount }}</p>
-                            <p class="mt-1 text-xs text-teal-100/75">ayat lancar dari {{ $progress->quranAyahTotal }}</p>
+                            <p class="font-display text-3xl font-semibold text-gold-300">{{ $bacaanSnap->percentLabel() }}</p>
+                            <p class="mt-1 text-xs text-teal-100/75">Juz {{ $bacaanSnap->juz->number }} dikerjakan</p>
                         </div>
                         <div class="rounded-2xl bg-white/10 px-4 py-3">
-                            <p class="font-display text-3xl font-semibold text-gold-300">{{ $progress->completedJuzCount() }}/30</p>
-                            <p class="mt-1 text-xs text-teal-100/75">juz selesai</p>
+                            <p class="font-display text-lg font-semibold text-gold-300 leading-snug">{{ $bacaanSnap->surahName }}</p>
+                            <p class="mt-1 text-xs text-teal-100/75">ayat {{ $bacaanSnap->ayahStart }}–{{ $bacaanSnap->ayahEnd }}</p>
                         </div>
                     </div>
-                    @if ($currentJuz)
-                        <p class="mt-4 text-sm text-teal-100/80">
-                            Fokus saat ini: Juz {{ $currentJuz->number }} · {{ $currentJuz->percent }}%
-                            <span class="text-teal-100/60">({{ $progress->totalPercent }}% seluruh Al-Qur'an)</span>
-                        </p>
-                    @endif
+                    <p class="mt-4 text-sm text-teal-100/80">{{ $bacaanSnap->positionLabel }}</p>
+                @elseif (($bacaan['iqroLabel'] ?? null))
+                    <div class="mt-5 rounded-2xl bg-white/10 px-4 py-3">
+                        <p class="font-display text-2xl font-semibold text-gold-300">{{ $bacaan['iqroLabel'] }}</p>
+                        <p class="mt-1 text-xs text-teal-100/75">Bacaan Iqro terakhir</p>
+                    </div>
+                @elseif ($progress && $currentJuz && $currentJuz->lancarCount > 0)
+                    <div class="mt-5 grid grid-cols-2 gap-3">
+                        <div class="rounded-2xl bg-white/10 px-4 py-3">
+                            <p class="font-display text-3xl font-semibold text-gold-300">{{ $currentJuz->percent }}%</p>
+                            <p class="mt-1 text-xs text-teal-100/75">Juz {{ $currentJuz->number }} dikerjakan</p>
+                        </div>
+                        <div class="rounded-2xl bg-white/10 px-4 py-3">
+                            <p class="font-display text-3xl font-semibold text-gold-300">{{ $currentJuz->lancarCount }}</p>
+                            <p class="mt-1 text-xs text-teal-100/75">ayat lancar di juz ini</p>
+                        </div>
+                    </div>
+                @endif
+
+                @if (($hafalan['juz30'] ?? null) || ($hafalan['doaName'] ?? null))
+                    <div class="mt-4 rounded-2xl bg-white/5 px-4 py-3 text-sm text-teal-100/85">
+                        @if ($hafalan['juz30'] ?? null)
+                            <p>Hafalan Juz 30 · {{ $hafalan['juz30']->percentLabel() }}</p>
+                        @endif
+                        @if ($hafalan['doaName'] ?? null)
+                            <p class="mt-1">Doa: {{ $hafalan['doaName'] }}
+                                @if ($hafalan['doaStatus'] ?? null)
+                                    · {{ $hafalan['doaStatus']->label() }}
+                                @endif
+                            </p>
+                        @endif
+                    </div>
                 @endif
             </div>
 
@@ -193,57 +220,56 @@
                 </section>
             @endif
 
-            @if ($progress)
-                <section id="hafalan" class="scroll-mt-24 space-y-3" x-data="{ showAllJuz: false }">
-                    <div class="flex items-end justify-between gap-3 px-1">
-                        <h2 class="ui-section-title">Hafalan</h2>
-                        <p class="text-xs text-slate-400">warna lebih dalam = lebih lancar</p>
-                    </div>
+            @if ($bacaanSnap || ($bacaan['iqroLabel'] ?? null) || ($hafalan['juz30'] ?? null) || ($hafalan['doaName'] ?? null))
+                <section id="progress" class="scroll-mt-24 space-y-3">
+                    <h2 class="ui-section-title px-1">Progress</h2>
 
-                    <x-card>
-                        @if ($currentJuz)
-                            <div class="mb-5">
-                                <div class="flex items-center justify-between gap-3 text-sm">
-                                    <p class="font-semibold text-teal-950">Juz {{ $currentJuz->number }} yang dikerjakan</p>
-                                    <p class="text-slate-500">{{ $currentJuz->lancarCount }}/{{ $currentJuz->ayahTotal }} · {{ $currentJuz->percent }}%</p>
-                                </div>
-                                <x-progress class="mt-2" :value="$currentJuz->percent" />
+                    @if ($bacaanSnap)
+                        <x-card>
+                            <p class="text-sm font-semibold text-slate-700">Bacaan Alquran</p>
+                            <div class="mt-2 flex items-center justify-between gap-3 text-sm">
+                                <p class="font-semibold text-teal-950">Juz {{ $bacaanSnap->juz->number }}</p>
+                                <p class="text-slate-500">{{ $bacaanSnap->juz->lancarCount }}/{{ $bacaanSnap->juz->ayahTotal }} · {{ $bacaanSnap->percentLabel() }}</p>
                             </div>
-                        @endif
+                            <p class="mt-1 text-sm text-slate-600">{{ $bacaanSnap->positionLabel }}</p>
+                            <x-progress class="mt-2" :value="$bacaanSnap->juz->percent" />
+                        </x-card>
+                    @elseif ($bacaan['iqroLabel'] ?? null)
+                        <x-card>
+                            <p class="text-sm font-semibold text-slate-700">Bacaan Iqro</p>
+                            <p class="mt-2 font-display text-xl font-semibold text-teal-950">{{ $bacaan['iqroLabel'] }}</p>
+                        </x-card>
+                    @endif
 
-                        <p class="mb-3 text-sm font-semibold text-slate-700">Peta 30 juz</p>
-                        <div class="grid grid-cols-6 gap-1.5 sm:grid-cols-10">
-                            @foreach ($progress->juz as $bar)
-                                <div class="flex aspect-square flex-col items-center justify-center rounded-lg text-[10px] font-semibold {{ $currentJuz?->number === $bar->number ? 'ring-2 ring-gold-400' : '' }}"
-                                     style="background: color-mix(in srgb, #275a50 {{ min($bar->percent, 100) }}%, #e7eee9); color: {{ $bar->percent >= 45 ? '#f7f4ee' : '#275a50' }}"
-                                     title="Juz {{ $bar->number }} · {{ $bar->percent }}%">
-                                    {{ $bar->number }}
-                                </div>
-                            @endforeach
-                        </div>
+                    @if ($hafalan['juz30'] ?? null)
+                        <x-card>
+                            <p class="text-sm font-semibold text-slate-700">Hafalan Juz 30</p>
+                            <div class="mt-2 flex items-center justify-between gap-3 text-sm">
+                                <p class="font-semibold text-teal-950">{{ $hafalan['juz30']->positionLabel }}</p>
+                                <p class="text-slate-500">{{ $hafalan['juz30']->percentLabel() }}</p>
+                            </div>
+                            <x-progress class="mt-2" :value="$hafalan['juz30']->juz->percent" />
+                        </x-card>
+                    @endif
 
-                        <button type="button"
-                                class="btn-ghost mt-4 min-h-10 w-full text-sm"
-                                @click="showAllJuz = !showAllJuz"
-                                x-text="showAllJuz ? 'Sembunyikan rincian juz' : 'Lihat rincian 30 juz'">
-                            Lihat rincian 30 juz
-                        </button>
-
-                        <div class="mt-4 space-y-3" x-show="showAllJuz" x-cloak>
-                            @foreach ($progress->juz as $bar)
+                    @if ($hafalan['doaName'] ?? null)
+                        <x-card>
+                            <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <div class="mb-1 flex items-center justify-between text-sm">
-                                        <span class="font-medium text-slate-700">Juz {{ $bar->number }}</span>
-                                        <span class="text-slate-500">{{ $bar->lancarCount }}/{{ $bar->ayahTotal }} · {{ $bar->percent }}%</span>
-                                    </div>
-                                    <x-progress :value="$bar->percent" />
+                                    <p class="text-sm font-semibold text-slate-700">Doa terakhir</p>
+                                    <p class="mt-2 font-display text-xl font-semibold text-teal-950">{{ $hafalan['doaName'] }}</p>
                                 </div>
-                            @endforeach
-                        </div>
-                    </x-card>
+                                @if ($hafalan['doaStatus'] ?? null)
+                                    <x-badge :tone="$hafalan['doaStatus']->value === 'lulus' ? 'ok' : 'warn'">
+                                        {{ $hafalan['doaStatus']->label() }}
+                                    </x-badge>
+                                @endif
+                            </div>
+                        </x-card>
+                    @endif
                 </section>
             @elseif ($year)
-                <x-empty>Belum ada hafalan lancar pada tahun ajaran ini.</x-empty>
+                <x-empty>Belum ada progress bacaan/hafalan pada tahun ajaran ini.</x-empty>
             @endif
 
             <section id="setoran" class="scroll-mt-24 space-y-2">

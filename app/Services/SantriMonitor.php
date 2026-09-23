@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SetoranStatus;
+use App\Enums\SetoranSubtype;
 use App\Models\AcademicYear;
 use App\Models\Attendance;
 use App\Models\HafalanSetoran;
@@ -18,6 +19,7 @@ class SantriMonitor
 {
     public function __construct(
         private HafalanProgress $progress,
+        private SetoranProgress $setoranProgress,
         private SppService $spp,
     ) {}
 
@@ -26,6 +28,8 @@ class SantriMonitor
      *     santri: SantriProfile,
      *     year: AcademicYear|null,
      *     progress: HafalanProgressResult|null,
+     *     bacaan: array<string, mixed>|null,
+     *     hafalan: array<string, mixed>|null,
      *     setoran: Collection<int, HafalanSetoran>,
      *     attendances: Collection<int, Attendance>,
      *     membership: HalaqahMember|null,
@@ -50,6 +54,8 @@ class SantriMonitor
         $membership = null;
         $schedules = collect();
         $progress = null;
+        $bacaan = null;
+        $hafalan = null;
 
         if ($year) {
             $membership = $santri->memberships()
@@ -65,7 +71,9 @@ class SantriMonitor
                 ->first();
 
             $schedules = $membership?->halaqah->schedules ?? collect();
-            $progress = $this->progress->forSantri($santri, $year);
+            $progress = $this->progress->forSantri($santri, $year, SetoranSubtype::Alquran);
+            $bacaan = $this->setoranProgress->bacaanForSantri((int) $santri->id, (int) $year->id);
+            $hafalan = $this->setoranProgress->hafalanForSantri((int) $santri->id, (int) $year->id);
         }
 
         $setoran = HafalanSetoran::query()
@@ -105,6 +113,8 @@ class SantriMonitor
             'santri' => $santri,
             'year' => $year,
             'progress' => $progress,
+            'bacaan' => $bacaan,
+            'hafalan' => $hafalan,
             'setoran' => $setoran,
             'attendances' => $attendances,
             'membership' => $membership,

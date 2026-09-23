@@ -122,6 +122,10 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::middleware('role:'.Role::Ketua.'|'.Role::KetuaPengajar.'|'.Role::Pengajar)->prefix('laporan')->name('laporan.')->group(function () {
         Route::get('progress', [ProgressController::class, 'index'])->name('progress.index');
+        Route::get('progress/bacaan', [ProgressController::class, 'bacaanIndex'])->name('progress.bacaan.index');
+        Route::get('progress/bacaan/{santri}', [ProgressController::class, 'bacaanShow'])->name('progress.bacaan.show');
+        Route::get('progress/hafalan', [ProgressController::class, 'hafalanIndex'])->name('progress.hafalan.index');
+        Route::get('progress/hafalan/{santri}', [ProgressController::class, 'hafalanShow'])->name('progress.hafalan.show');
         Route::get('progress/{santri}', [ProgressController::class, 'show'])->name('progress.show');
         Route::get('absensi', AttendanceRecapController::class)->name('attendance.index');
     });

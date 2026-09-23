@@ -3,7 +3,10 @@
 namespace App\Models;
 
 use App\Enums\ActivityType;
+use App\Enums\SetoranCategory;
 use App\Enums\SetoranStatus;
+use App\Enums\SetoranSubtype;
+use App\Support\QuranCatalog;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,8 +17,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'ustaz_user_id',
     'academic_year_id',
     'activity_type',
+    'category',
+    'subtype',
     'iqro_level',
     'iqro_page',
+    'doa_name',
     'quran_surah_id',
     'setoran_date',
     'ayah_start',
@@ -41,6 +47,8 @@ class HafalanSetoran extends Model
             'iqro_page' => 'integer',
             'status' => SetoranStatus::class,
             'activity_type' => ActivityType::class,
+            'category' => SetoranCategory::class,
+            'subtype' => SetoranSubtype::class,
         ];
     }
 
@@ -86,11 +94,15 @@ class HafalanSetoran extends Model
 
     public function isIqro(): bool
     {
-        return $this->iqro_level !== null;
+        return $this->subtype === SetoranSubtype::Iqro || $this->iqro_level !== null;
     }
 
     public function ayahRange(): string
     {
+        if ($this->subtype === SetoranSubtype::Doa) {
+            return '—';
+        }
+
         if ($this->isIqro()) {
             return 'hlm. '.$this->iqro_page;
         }
@@ -104,14 +116,37 @@ class HafalanSetoran extends Model
             : $this->ayah_start.'–'.$this->ayah_end;
     }
 
+    public function typeLabel(): string
+    {
+        $category = $this->category?->label() ?? 'Setoran';
+        $subtype = $this->subtype?->label() ?? '';
+
+        return trim($category.' · '.$subtype);
+    }
+
     public function passageLabel(): string
     {
-        if ($this->isIqro()) {
-            return 'Iqro '.$this->iqro_level.' hlm. '.$this->iqro_page;
+        return match ($this->subtype) {
+            SetoranSubtype::Iqro => 'Iqro '.$this->iqro_level.' hlm. '.$this->iqro_page,
+            SetoranSubtype::Doa => $this->doa_name ?: 'Doa',
+            SetoranSubtype::Alquran, SetoranSubtype::Juz30 => $this->quranPassageLabel(),
+            default => $this->isIqro()
+                ? 'Iqro '.$this->iqro_level.' hlm. '.$this->iqro_page
+                : $this->quranPassageLabel(),
+        };
+    }
+
+    private function quranPassageLabel(): string
+    {
+        $surah = $this->surah?->name_id ?? 'Surat';
+        $base = $surah.' ayat '.$this->ayahRange();
+        if ($this->quran_surah_id && $this->ayah_start) {
+            $juz = QuranCatalog::juzForAyah((int) $this->quran_surah_id, (int) $this->ayah_start);
+            if ($juz) {
+                return $base.' · Juz '.$juz;
+            }
         }
 
-        $surah = $this->surah?->name_id ?? 'Surat';
-
-        return $surah.' ayat '.$this->ayahRange();
+        return $base;
     }
 }

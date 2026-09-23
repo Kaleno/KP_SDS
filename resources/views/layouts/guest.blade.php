@@ -43,7 +43,7 @@
                     </li>
                     <li class="flex items-start gap-3">
                         <span class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-gold-300"><x-icon name="chart" class="h-4 w-4" /></span>
-                        <span>Progress 30 juz dihitung dari ayat yang sudah lancar.</span>
+                        <span>Progress bacaan & hafalan disesuaikan jenis setoran.</span>
                     </li>
                 </ul>
             </aside>

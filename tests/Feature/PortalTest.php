@@ -98,7 +98,7 @@ class PortalTest extends TestCase
             ->assertSee('Mengulang')
             ->assertSee('Perlu diulang')
             ->assertSee('pertemuan berikutnya')
-            ->assertSee('Peta 30 juz')
+            ->assertDontSee('Peta 30 juz')
             ->assertDontSee('Input setoran')
             ->assertDontSee('Simpan setoran');
     }
@@ -155,6 +155,9 @@ class PortalTest extends TestCase
             'halaqah_id' => $fx['halaqah']->id,
             'ustaz_user_id' => $fx['ustaz']->id,
             'academic_year_id' => $fx['year']->id,
+            'activity_type' => 'ngaji',
+            'category' => 'bacaan',
+            'subtype' => 'alquran',
             'quran_surah_id' => 1,
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,

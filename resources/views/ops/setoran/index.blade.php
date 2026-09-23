@@ -118,9 +118,10 @@
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <p class="font-semibold text-teal-950">{{ $item->santri->user->name }}</p>
+                        <p class="text-xs text-slate-500">{{ $item->typeLabel() }}</p>
                         <p class="text-sm text-slate-600">{{ $item->passageLabel() }}</p>
                         <p class="text-sm text-slate-500">
-                            {{ $item->setoran_date->format('d/m/Y') }} · {{ $item->halaqah->name }}
+                            {{ \App\Support\DateLabel::long($item->setoran_date) }} · {{ $item->halaqah->name }}
                         </p>
                     </div>
                     <x-badge :tone="$item->status->value === 'lulus' ? 'ok' : 'warn'">

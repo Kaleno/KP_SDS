@@ -2,12 +2,11 @@
 
 namespace App\Http\Requests\Ops;
 
-use App\Enums\SantriTrack;
+use App\Enums\SetoranCategory;
 use App\Enums\SetoranStatus;
+use App\Enums\SetoranSubtype;
 use App\Models\QuranJuz;
 use App\Models\QuranSurah;
-use App\Models\SantriProfile;
-use App\Services\OperationalCalendar;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -25,37 +24,47 @@ class StoreSetoranRequest extends FormRequest
      */
     public function rules(): array
     {
-        $santri = SantriProfile::query()->find($this->input('santri_id'));
-        $isIqro = $santri?->track === SantriTrack::Iqro;
+        $subtype = SetoranSubtype::tryFrom((string) $this->input('subtype'));
+        $needsQuran = in_array($subtype, [SetoranSubtype::Alquran, SetoranSubtype::Juz30], true);
+        $needsIqro = $subtype === SetoranSubtype::Iqro;
+        $needsDoa = $subtype === SetoranSubtype::Doa;
 
         return [
             'santri_id' => ['required', 'exists:santri_profiles,id'],
             'setoran_date' => ['required', 'date'],
+            'category' => ['required', Rule::enum(SetoranCategory::class)],
+            'subtype' => ['required', Rule::enum(SetoranSubtype::class)],
             'status' => ['required', Rule::enum(SetoranStatus::class)],
             'note' => ['nullable', 'string', 'max:500'],
             'sesi' => ['nullable', 'integer', 'exists:attendance_sessions,id'],
-            'quran_surah_id' => [$isIqro ? 'nullable' : 'required', 'exists:quran_surahs,id'],
-            'ayah_start' => [$isIqro ? 'nullable' : 'required', 'integer', 'min:1'],
-            'ayah_end' => [$isIqro ? 'nullable' : 'required', 'integer', 'gte:ayah_start'],
-            'iqro_level' => [$isIqro ? 'required' : 'nullable', 'integer', 'min:1', 'max:6'],
-            'iqro_page' => [$isIqro ? 'required' : 'nullable', 'integer', 'min:1', 'max:100'],
+            'quran_surah_id' => [$needsQuran ? 'required' : 'nullable', 'exists:quran_surahs,id'],
+            'ayah_start' => [$needsQuran ? 'required' : 'nullable', 'integer', 'min:1'],
+            'ayah_end' => [$needsQuran ? 'required' : 'nullable', 'integer', 'gte:ayah_start'],
+            'iqro_level' => [$needsIqro ? 'required' : 'nullable', 'integer', 'min:1', 'max:6'],
+            'iqro_page' => [$needsIqro ? 'required' : 'nullable', 'integer', 'min:1', 'max:100'],
+            'doa_name' => [$needsDoa ? 'required' : 'nullable', 'string', 'max:255'],
         ];
     }
 
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            $santri = SantriProfile::query()->find($this->input('santri_id'));
-            if (! $santri) {
-                return;
+            $category = SetoranCategory::tryFrom((string) $this->input('category'));
+            $subtype = SetoranSubtype::tryFrom((string) $this->input('subtype'));
+
+            if ($category && $subtype && $subtype->category() !== $category) {
+                $validator->errors()->add('subtype', 'Subtipe tidak cocok dengan jenis setoran.');
             }
 
-            if ($santri->track === SantriTrack::Iqro) {
+            if (! in_array($subtype, [SetoranSubtype::Alquran, SetoranSubtype::Juz30], true)) {
                 return;
             }
 
             $this->assertAyahWithinSurah($validator);
-            $this->assertFridayJuz30($validator);
+
+            if ($subtype === SetoranSubtype::Juz30) {
+                $this->assertJuz30Surah($validator);
+            }
         });
     }
 
@@ -81,13 +90,8 @@ class StoreSetoranRequest extends FormRequest
         }
     }
 
-    protected function assertFridayJuz30(Validator $validator): void
+    protected function assertJuz30Surah(Validator $validator): void
     {
-        $date = $this->date('setoran_date');
-        if (! $date || ! app(OperationalCalendar::class)->isFriday($date)) {
-            return;
-        }
-
         $juz = QuranJuz::query()->find(30);
         if (! $juz) {
             return;
@@ -97,7 +101,7 @@ class StoreSetoranRequest extends FormRequest
         if ($surahId < (int) $juz->start_surah_id || $surahId > (int) $juz->end_surah_id) {
             $validator->errors()->add(
                 'quran_surah_id',
-                'Hari Jumat untuk jalur Alquran hanya setoran hafalan juz 30.',
+                'Hafalan Juz 30 hanya memakai surat An-Naba s.d. An-Nas.',
             );
         }
     }

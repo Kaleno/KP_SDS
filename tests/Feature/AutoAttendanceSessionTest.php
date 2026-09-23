@@ -130,6 +130,19 @@ class AutoAttendanceSessionTest extends TestCase
             ->assertDontSee('Masjid Utama');
     }
 
+    public function test_pengajar_without_halaqah_sees_assignment_message(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-23 10:00:00'));
+        $pengajar = User::factory()->create(['username' => 'lonely']);
+        $pengajar->assignRole(Role::Pengajar);
+
+        $this->actingAs($pengajar)
+            ->get(route('ops.attendance.index'))
+            ->assertOk()
+            ->assertSee('Belum ada kelas yang ditugaskan kepada Anda')
+            ->assertDontSee('Tidak ada jadwal untuk');
+    }
+
     public function test_pengajar_sees_same_attendance_ui_as_ketua_pengajar(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-23 10:00:00'));
