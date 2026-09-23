@@ -10,6 +10,7 @@ use App\Models\HafalanSetoran;
 use App\Models\HalaqahMember;
 use App\Models\SantriProfile;
 use App\Models\Schedule;
+use App\Support\DateLabel;
 use App\Support\WeekDay;
 use Illuminate\Support\Collection;
 
@@ -58,7 +59,6 @@ class SantriMonitor
                     'halaqah.ustaz',
                     'halaqah.schedules' => fn ($query) => $query
                         ->where('is_active', true)
-                        ->with('location')
                         ->orderBy('day_of_week')
                         ->orderBy('start_time'),
                 ])
@@ -80,7 +80,7 @@ class SantriMonitor
         $attendances = Attendance::query()
             ->select('attendances.*')
             ->join('attendance_sessions', 'attendance_sessions.id', '=', 'attendances.attendance_session_id')
-            ->with(['session.schedule.location', 'session.schedule.halaqah'])
+            ->with(['session.schedule.halaqah'])
             ->where('attendances.santri_id', $santri->id)
             ->when($year, function ($query) use ($year): void {
                 $query->whereHas('session.schedule.halaqah', fn ($halaqah) => $halaqah->where('academic_year_id', $year->id));
@@ -115,7 +115,7 @@ class SantriMonitor
             'unpaidMonths' => $unpaidMonths,
             'snapshot' => [
                 'dayLabel' => WeekDay::label($day),
-                'todayLabel' => now()->format('d/m/Y'),
+                'todayLabel' => DateLabel::dayMonthYear(now()),
                 'todaySlots' => $schedules->filter(fn (Schedule $slot): bool => (int) $slot->day_of_week === $day)->values(),
                 'todayAttendance' => $attendances->first(
                     fn (Attendance $row): bool => $row->session->session_date->toDateString() === $today

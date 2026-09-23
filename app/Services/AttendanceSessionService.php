@@ -9,12 +9,54 @@ use App\Models\SantriProfile;
 use App\Models\Schedule;
 use App\Models\User;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class AttendanceSessionService
 {
     public function __construct(private OperationalCalendar $calendar) {}
+
+    /**
+     * Ensure today's (or given date) sessions exist for matching active schedules.
+     * Returns empty collection on weekends/holidays without creating rows.
+     *
+     * @param  iterable<int, int|string>  $halaqahIds
+     * @return Collection<int, Schedule>
+     */
+    public function ensureForDate(User $user, iterable $halaqahIds, ?CarbonInterface $date = null): Collection
+    {
+        $date ??= now();
+        $ids = collect($halaqahIds)
+            ->map(fn ($id): int => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty() || $this->calendar->isOffDay($date)) {
+            return collect();
+        }
+
+        $day = (int) $date->isoWeekday();
+
+        $slots = Schedule::query()
+            ->with(['halaqah.ustaz'])
+            ->whereIn('halaqah_id', $ids)
+            ->where('is_active', true)
+            ->where('day_of_week', $day)
+            ->orderBy('start_time')
+            ->get();
+
+        foreach ($slots as $slot) {
+            $this->open($slot, $user, $date);
+        }
+
+        $slots->load([
+            'sessions' => fn ($query) => $query->whereDate('session_date', $date->toDateString()),
+        ]);
+
+        return $slots;
+    }
 
     public function open(Schedule $schedule, User $opener, CarbonInterface $date): AttendanceSession
     {
@@ -37,13 +79,20 @@ class AttendanceSessionService
         }
 
         return DB::transaction(function () use ($schedule, $opener, $date) {
-            $session = AttendanceSession::query()->firstOrCreate(
-                [
+            $sessionDate = $date->toDateString();
+
+            $session = AttendanceSession::query()
+                ->where('schedule_id', $schedule->id)
+                ->whereDate('session_date', $sessionDate)
+                ->first();
+
+            if ($session === null) {
+                $session = AttendanceSession::query()->create([
                     'schedule_id' => $schedule->id,
-                    'session_date' => $date->toDateString(),
-                ],
-                ['opened_by_user_id' => $opener->id],
-            );
+                    'session_date' => $sessionDate,
+                    'opened_by_user_id' => $opener->id,
+                ]);
+            }
 
             $this->syncMembers($session);
 

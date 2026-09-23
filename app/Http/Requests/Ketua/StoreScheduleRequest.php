@@ -22,7 +22,6 @@ class StoreScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'location_id' => ['required', 'exists:locations,id'],
             'day_of_week' => ['required', 'integer', 'in:'.implode(',', array_keys(WeekDay::labels()))],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],

@@ -7,7 +7,7 @@
             </h1>
             <p class="text-sm text-slate-500">
                 @if ($session ?? null)
-                    {{ $session->schedule->halaqah->name }} · {{ $session->session_date->format('d/m/Y') }}
+                    {{ \App\Support\DateLabel::long($session->session_date) }}
                 @else
                     Catat hafalan santri
                 @endif

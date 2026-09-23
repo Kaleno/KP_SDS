@@ -12,7 +12,6 @@ use App\Models\AttendanceSession;
 use App\Models\HafalanSetoran;
 use App\Models\Halaqah;
 use App\Models\HalaqahMember;
-use App\Models\Location;
 use App\Models\SantriProfile;
 use App\Models\Schedule;
 use App\Models\User;
@@ -83,7 +82,6 @@ class PortalTest extends TestCase
             ->assertSee('Hadir di halaqah')
             ->assertSee('Hari ini')
             ->assertSee('07:00')
-            ->assertSee('Masjid Utama')
             ->assertSee('Jadwal halaqah');
     }
 
@@ -117,7 +115,6 @@ class PortalTest extends TestCase
             'end_date' => '2027-06-30',
             'is_active' => true,
         ]);
-        $location = Location::query()->create(['name' => 'Masjid Utama']);
         $halaqah = Halaqah::query()->create([
             'academic_year_id' => $year->id,
             'ustaz_user_id' => $ustaz->id,
@@ -139,7 +136,6 @@ class PortalTest extends TestCase
 
         $schedule = Schedule::query()->create([
             'halaqah_id' => $halaqah->id,
-            'location_id' => $location->id,
             'day_of_week' => now()->isoWeekday(),
             'start_time' => '07:00:00',
             'end_time' => '08:30:00',

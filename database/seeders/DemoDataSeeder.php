@@ -15,7 +15,6 @@ use App\Models\AttendanceSession;
 use App\Models\HafalanSetoran;
 use App\Models\Halaqah;
 use App\Models\HalaqahMember;
-use App\Models\Location;
 use App\Models\SantriProfile;
 use App\Models\SantriRegistration;
 use App\Models\Schedule;
@@ -37,11 +36,6 @@ class DemoDataSeeder extends Seeder
             ],
         );
         $year->markAsActive();
-
-        $location = Location::query()->updateOrCreate(
-            ['name' => 'Masjid Utama'],
-            ['description' => 'Aula tahfidz lantai 1'],
-        );
 
         $ustaz = User::query()->updateOrCreate(
             ['username' => 'ustaz1'],
@@ -141,7 +135,6 @@ class DemoDataSeeder extends Seeder
                     'start_time' => $slot['start_time'],
                 ],
                 [
-                    'location_id' => $location->id,
                     'end_time' => $slot['end_time'],
                     'is_active' => true,
                 ],
@@ -157,7 +150,6 @@ class DemoDataSeeder extends Seeder
                     'start_time' => '07:00:00',
                 ],
                 [
-                    'location_id' => $location->id,
                     'end_time' => '08:30:00',
                     'is_active' => true,
                 ],

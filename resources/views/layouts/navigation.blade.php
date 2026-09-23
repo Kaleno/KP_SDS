@@ -31,6 +31,7 @@
             ['label' => 'SPP', 'route' => 'ops.spp.index', 'match' => 'ops.spp.*', 'icon' => 'cash', 'group' => 'Operasional', 'primary' => false],
             ['label' => 'Progress', 'route' => 'laporan.progress.index', 'match' => 'laporan.progress.*', 'icon' => 'chart', 'group' => 'Laporan', 'primary' => false],
             ['label' => 'Rekap', 'route' => 'laporan.attendance.index', 'match' => 'laporan.attendance.*', 'icon' => 'clipboard', 'group' => 'Laporan', 'primary' => false],
+            ['label' => 'Libur', 'route' => 'ketua.holidays.index', 'match' => 'ketua.holidays.*', 'icon' => 'alert', 'group' => 'Master data', 'primary' => false],
         ];
     } elseif ($user->hasRole(\App\Support\Role::Pengajar)) {
         $links = [

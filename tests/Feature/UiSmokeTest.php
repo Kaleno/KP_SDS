@@ -10,7 +10,6 @@ use App\Models\AcademicYear;
 use App\Models\HafalanSetoran;
 use App\Models\Halaqah;
 use App\Models\HalaqahMember;
-use App\Models\Location;
 use App\Models\SantriProfile;
 use App\Models\Schedule;
 use App\Models\User;
@@ -43,7 +42,7 @@ class UiSmokeTest extends TestCase
         $this->actingAs($fx['ketua'])->get(route('ketua.halaqah.show', $fx['halaqah']))->assertRedirect(route('ketua.halaqah.edit', $fx['halaqah']));
         $this->actingAs($fx['ketua'])->get(route('ketua.registrations.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ketua.holidays.index'))->assertOk();
-        $this->actingAs($fx['ketua'])->get(route('ketua.finance.index'))->assertOk()->assertSee('Biaya SPP bulanan');
+        $this->actingAs($fx['ketua'])->get(route('ketua.finance.index'))->assertOk()->assertSee('Pengaturan SPP');
         $this->actingAs($fx['ketua'])->get(route('ops.attendance.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ops.setoran.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ops.setoran.index', ['date_from' => 'bukan-tanggal']))->assertOk();
@@ -58,7 +57,7 @@ class UiSmokeTest extends TestCase
         $this->actingAs($fx['ketua'])->get(route('profile.edit'))->assertOk();
 
         $this->actingAs($fx['ustaz'])->get(route('dashboard'))->assertOk();
-        $this->actingAs($fx['ustaz'])->post(route('ops.attendance.open', $fx['schedule']))->assertRedirect();
+        $this->actingAs($fx['ustaz'])->get(route('ops.attendance.index'))->assertOk();
         $session = $fx['schedule']->sessions()->first();
         $this->actingAs($fx['ustaz'])->get(route('ops.attendance.show', $session))->assertOk()->assertSee('Ahmad Fauzi');
 
@@ -118,7 +117,6 @@ class UiSmokeTest extends TestCase
             'end_date' => '2027-06-30',
             'is_active' => true,
         ]);
-        $location = Location::query()->create(['name' => 'Masjid Utama']);
         $halaqah = Halaqah::query()->create([
             'academic_year_id' => $year->id,
             'ustaz_user_id' => $ustaz->id,
@@ -140,7 +138,6 @@ class UiSmokeTest extends TestCase
 
         $schedule = Schedule::query()->create([
             'halaqah_id' => $halaqah->id,
-            'location_id' => $location->id,
             'day_of_week' => now()->isoWeekday(),
             'start_time' => '07:00:00',
             'end_time' => '08:30:00',

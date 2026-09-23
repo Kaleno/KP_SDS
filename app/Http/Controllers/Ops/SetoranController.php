@@ -194,10 +194,31 @@ class SetoranController extends Controller
 
     public function update(UpdateSetoranRequest $request, HafalanSetoran $setoran): RedirectResponse
     {
-        $setoran->load('halaqah');
+        $setoran->load(['halaqah', 'santri']);
         $this->access->assertHalaqah($request->user(), $setoran->halaqah);
 
-        $setoran->update($request->validated());
+        $validated = $request->validated();
+        $isIqro = $setoran->santri->track === SantriTrack::Iqro;
+        $date = Carbon::parse($validated['setoran_date']);
+
+        if ($isIqro) {
+            $validated['quran_surah_id'] = null;
+            $validated['ayah_start'] = null;
+            $validated['ayah_end'] = null;
+            $validated['activity_type'] = ActivityType::Ngaji;
+        } else {
+            $validated['iqro_level'] = null;
+            $validated['iqro_page'] = null;
+            $validated['activity_type'] = $this->calendar->isFriday($date)
+                ? ActivityType::Hafalan
+                : ActivityType::Ngaji;
+        }
+
+        $setoran->update($validated);
+
+        if ($isIqro && isset($validated['iqro_level'])) {
+            $setoran->santri->update(['iqro_level' => (int) $validated['iqro_level']]);
+        }
 
         return redirect()->route('ops.setoran.index')->with('status', 'Setoran dikoreksi.');
     }
@@ -257,6 +278,10 @@ class SetoranController extends Controller
 
         $map = [];
         foreach ($latest as $row) {
+            if ($row->quran_surah_id === null) {
+                continue;
+            }
+
             $max = (int) $row->surah?->ayah_count;
             if ($max < 1) {
                 continue;

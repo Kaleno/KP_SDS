@@ -6,5 +6,5 @@ use App\Http\Controllers\Controller;
 
 abstract class KetuaController extends Controller
 {
-    // Otorisasi lewat middleware role:ketua + Gate manage-master di FormRequest.
+    // Otorisasi lewat middleware role + Gate di FormRequest (manage-master / manage-holidays).
 }

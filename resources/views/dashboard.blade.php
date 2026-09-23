@@ -12,24 +12,21 @@
     </x-slot>
 
     <div class="max-w-6xl space-y-5">
-        <div class="relative overflow-hidden rounded-3xl bg-teal-950 px-5 py-6 text-white shadow-lift sm:px-8 sm:py-8">
+        <div class="relative overflow-hidden rounded-3xl bg-teal-950 px-5 py-5 text-white shadow-lift sm:px-8 sm:py-6">
             <div class="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full bg-gold-400/20 blur-2xl"></div>
-            <div class="pointer-events-none absolute bottom-0 right-10 h-24 w-24 rounded-full bg-teal-500/30 blur-xl"></div>
             <p class="text-[11px] uppercase tracking-[0.2em] text-gold-300">Assalamu'alaikum</p>
-            <h2 class="mt-2 font-display text-3xl font-semibold text-balance">{{ Auth::user()->name }}</h2>
-            <p class="mt-2 max-w-xl text-sm text-teal-100/80">
-                @if ($isSuperAdmin)
+            <h2 class="mt-1 font-display text-2xl font-semibold text-balance sm:text-3xl">{{ Auth::user()->name }}</h2>
+            @if ($isSuperAdmin)
+                <p class="mt-2 max-w-xl text-sm text-teal-100/80">
                     Pemelihara teknis sistem. Kelola akun Ketua, lalu serahkan operasional harian kepada pimpinan.
-                @elseif ($isKetua)
-                    Ringkasan hari ini: sesi, kehadiran, setoran, dan kelas yang perlu perhatian.
-                @elseif ($isUstaz)
-                    Fokus ke sesi hari ini: buka absensi, catat setoran, lalu tindaklanjuti santri yang belum lancar.
-                @else
-                    Akun Anda sudah aktif.
-                @endif
-            </p>
-            @if (! empty($overview['year']))
-                <p class="mt-4 text-xs text-teal-100/70">{{ $overview['year']->name }}</p>
+                </p>
+            @elseif ($overview)
+                <p class="mt-2 text-sm text-teal-100/80">
+                    {{ $overview['dayLabel'] }}, {{ $overview['todayLabel'] }}
+                    @if (! empty($overview['year']))
+                        · {{ $overview['year']->name }}
+                    @endif
+                </p>
             @endif
         </div>
 

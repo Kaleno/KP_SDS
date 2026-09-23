@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['halaqah_id', 'location_id', 'day_of_week', 'start_time', 'end_time', 'is_active'])]
+#[Fillable(['halaqah_id', 'day_of_week', 'start_time', 'end_time', 'is_active'])]
 class Schedule extends Model
 {
     /**
@@ -27,14 +27,6 @@ class Schedule extends Model
     public function halaqah(): BelongsTo
     {
         return $this->belongsTo(Halaqah::class);
-    }
-
-    /**
-     * @return BelongsTo<Location, $this>
-     */
-    public function location(): BelongsTo
-    {
-        return $this->belongsTo(Location::class);
     }
 
     /**

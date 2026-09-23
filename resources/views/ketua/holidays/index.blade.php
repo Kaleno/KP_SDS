@@ -3,7 +3,7 @@
         <div>
             <p class="ui-section-title">Kalender</p>
             <h1 class="font-display text-2xl font-semibold text-teal-950">Tanggal merah</h1>
-            <p class="text-sm text-slate-500">Sabtu & Minggu otomatis libur. Tambah tanggal merah di sini.</p>
+            <p class="text-sm text-slate-500">Sabtu & Minggu otomatis libur. Tambah tanggal merah di sini — libur mematikan sesi absensi otomatis Senin–Jumat.</p>
         </div>
     </x-slot>
 

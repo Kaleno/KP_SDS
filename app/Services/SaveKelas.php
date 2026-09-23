@@ -23,7 +23,6 @@ class SaveKelas
     {
         return DB::transaction(function () use ($existing, $data): Halaqah {
             $year = $existing?->academicYear ?? $this->defaults->activeYear();
-            $location = $this->defaults->location();
             $days = array_values(array_unique(array_map('intval', $data['days'])));
             $start = $this->withSeconds((string) $data['start_time']);
             $end = $this->withSeconds((string) $data['end_time']);
@@ -45,17 +44,17 @@ class SaveKelas
                 }
             }
 
-            $this->syncSchedules($halaqah, $location->id, $days, $start, $end);
+            $this->syncSchedules($halaqah, $days, $start, $end);
             $this->memberships->enrollAllActive($halaqah);
 
-            return $halaqah->fresh(['ustaz', 'schedules.location', 'activeMembers.santri.user']) ?? $halaqah;
+            return $halaqah->fresh(['ustaz', 'schedules', 'activeMembers.santri.user']) ?? $halaqah;
         });
     }
 
     /**
      * @param  list<int>  $days
      */
-    private function syncSchedules(Halaqah $halaqah, int $locationId, array $days, string $start, string $end): void
+    private function syncSchedules(Halaqah $halaqah, array $days, string $start, string $end): void
     {
         $existing = $halaqah->schedules()->get()->keyBy(fn (Schedule $schedule): int => (int) $schedule->day_of_week);
 
@@ -65,7 +64,6 @@ class SaveKelas
 
             if ($selected) {
                 $payload = [
-                    'location_id' => $locationId,
                     'day_of_week' => $day,
                     'start_time' => $start,
                     'end_time' => $end,

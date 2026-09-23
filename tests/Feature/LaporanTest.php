@@ -12,7 +12,6 @@ use App\Models\AttendanceSession;
 use App\Models\HafalanSetoran;
 use App\Models\Halaqah;
 use App\Models\HalaqahMember;
-use App\Models\Location;
 use App\Models\QuranSurah;
 use App\Models\SantriProfile;
 use App\Models\Schedule;
@@ -54,7 +53,7 @@ class LaporanTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Kelas aktif')
-            ->assertSee('Santri aktif')
+            ->assertSee('Jadwal hari ini')
             ->assertSee('Setoran hari ini')
             ->assertSee('Alfa hari ini');
     }
@@ -207,7 +206,6 @@ class LaporanTest extends TestCase
             'end_date' => '2027-06-30',
             'is_active' => true,
         ]);
-        $location = Location::query()->create(['name' => 'Masjid Utama']);
         $halaqah = Halaqah::query()->create([
             'academic_year_id' => $year->id,
             'ustaz_user_id' => $ustaz->id,
@@ -229,7 +227,6 @@ class LaporanTest extends TestCase
 
         $schedule = Schedule::query()->create([
             'halaqah_id' => $halaqah->id,
-            'location_id' => $location->id,
             'day_of_week' => now()->isoWeekday(),
             'start_time' => '07:00:00',
             'end_time' => '08:30:00',

@@ -118,9 +118,7 @@
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <p class="font-semibold text-teal-950">{{ $item->santri->user->name }}</p>
-                        <p class="text-sm text-slate-600">
-                            {{ $item->surah->name_id }} ayat {{ $item->ayahRange() }}
-                        </p>
+                        <p class="text-sm text-slate-600">{{ $item->passageLabel() }}</p>
                         <p class="text-sm text-slate-500">
                             {{ $item->setoran_date->format('d/m/Y') }} · {{ $item->halaqah->name }}
                         </p>

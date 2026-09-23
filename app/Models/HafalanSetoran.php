@@ -92,7 +92,7 @@ class HafalanSetoran extends Model
     public function ayahRange(): string
     {
         if ($this->isIqro()) {
-            return 'Iqro '.$this->iqro_level.' hlm. '.$this->iqro_page;
+            return 'hlm. '.$this->iqro_page;
         }
 
         if ($this->ayah_start === null) {
@@ -102,5 +102,16 @@ class HafalanSetoran extends Model
         return $this->ayah_start === $this->ayah_end
             ? (string) $this->ayah_start
             : $this->ayah_start.'–'.$this->ayah_end;
+    }
+
+    public function passageLabel(): string
+    {
+        if ($this->isIqro()) {
+            return 'Iqro '.$this->iqro_level.' hlm. '.$this->iqro_page;
+        }
+
+        $surah = $this->surah?->name_id ?? 'Surat';
+
+        return $surah.' ayat '.$this->ayahRange();
     }
 }

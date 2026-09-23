@@ -30,7 +30,7 @@
     @if ($session ?? null)
         <input type="hidden" name="setoran_date" value="{{ $session->session_date->toDateString() }}">
         <div class="rounded-2xl bg-cream-100 px-4 py-3 text-sm text-slate-600">
-            Tanggal sesi {{ $session->session_date->format('d/m/Y') }} — penilaian mengikuti tanggal absensi.
+            Tanggal sesi {{ \App\Support\DateLabel::long($session->session_date) }} — penilaian mengikuti tanggal absensi.
         </div>
     @else
         <div>

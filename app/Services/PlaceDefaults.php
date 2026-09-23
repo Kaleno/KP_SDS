@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\AcademicYear;
-use App\Models\Location;
 
 class PlaceDefaults
 {
@@ -28,17 +27,5 @@ class PlaceDefaults
         $year->markAsActive();
 
         return $year->fresh();
-    }
-
-    public function location(): Location
-    {
-        $location = Location::query()->orderBy('id')->first();
-        if ($location) {
-            return $location;
-        }
-
-        return Location::query()->create([
-            'name' => 'Tempat utama',
-        ]);
     }
 }

@@ -29,7 +29,7 @@
                         Hafalan, absensi, dan jadwal dalam satu ruang yang tenang.
                     </h1>
                     <p class="mt-5 max-w-md text-teal-100/80 leading-relaxed">
-                        Dirancang untuk pesantren dan madrasah: ustaz mencatat di kelas, ketua memimpin dari pusat, orang tua memantau kemajuan anak.
+                        &ldquo;Barangsiapa menempuh suatu jalan untuk mencari ilmu, maka Allah mudahkan untuknya jalan menuju surga.&rdquo; (HR. Muslim). Sebuah ruang digital untuk mendukung perjalanan mulia para santri.
                     </p>
                 </div>
                 <ul class="relative grid gap-4 text-sm text-teal-100/90">

@@ -2,11 +2,7 @@
     <x-slot name="header">
         <div>
             <p class="ui-section-title">Absensi</p>
-            <h1 class="font-display text-xl font-semibold text-teal-950 sm:text-2xl">{{ $session->schedule->halaqah->name }}</h1>
-            <p class="text-sm text-slate-500">
-                {{ $session->session_date->format('d/m/Y') }} · {{ $session->schedule->timeRange() }}
-                · {{ $session->schedule->location->name }}
-            </p>
+            <h1 class="font-display text-xl font-semibold text-teal-950 sm:text-2xl">{{ \App\Support\DateLabel::long($session->session_date) }}</h1>
         </div>
     </x-slot>
 

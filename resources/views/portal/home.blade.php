@@ -135,7 +135,7 @@
                                 <div>
                                     <p class="font-semibold text-amber-950">Perlu diulang</p>
                                     <p class="mt-0.5 text-sm text-amber-800">
-                                        Setoran terakhir: {{ $needsFollowUp->surah->name_id }} ayat {{ $needsFollowUp->ayahRange() }}.
+                                        Setoran terakhir: {{ $needsFollowUp->passageLabel() }}.
                                         {{ $needsFollowUp->status->hint() }}.
                                     </p>
                                 </div>
@@ -173,7 +173,7 @@
                             <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Setoran</p>
                             @if ($todaySetoran->isNotEmpty())
                                 <p class="mt-2 font-display text-xl font-semibold text-teal-950">{{ $todaySetoran->first()->status->label() }}</p>
-                                <p class="mt-1 text-xs text-slate-500">{{ $todaySetoran->first()->surah->name_id }} ayat {{ $todaySetoran->first()->ayahRange() }}</p>
+                                <p class="mt-1 text-xs text-slate-500">{{ $todaySetoran->first()->passageLabel() }}</p>
                             @else
                                 <p class="mt-2 font-display text-xl font-semibold text-slate-700">Belum ada</p>
                                 <p class="mt-1 text-xs text-slate-500">Belum ada setoran tercatat hari ini</p>
@@ -182,8 +182,8 @@
                         <div class="ui-card p-4">
                             <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Jadwal</p>
                             @if ($todaySlots->isNotEmpty())
-                                <p class="mt-2 font-display text-xl font-semibold text-teal-950">{{ $todaySlots->first()->timeRange() }}</p>
-                                <p class="mt-1 text-xs text-slate-500">{{ $todaySlots->first()->location->name }}</p>
+                                <p class="mt-2 font-display text-xl font-semibold text-teal-950">Hari ini</p>
+                                <p class="mt-1 text-xs text-slate-500">{{ \App\Support\DateLabel::long(now()) }}</p>
                             @else
                                 <p class="mt-2 font-display text-xl font-semibold text-slate-700">Libur halaqah</p>
                                 <p class="mt-1 text-xs text-slate-500">Lihat jadwal mingguan di bawah</p>
@@ -252,7 +252,7 @@
                     <div class="ui-card p-4">
                         <div class="flex items-start justify-between gap-3">
                             <div>
-                                <p class="font-semibold text-teal-950">{{ $item->surah->name_id }} ayat {{ $item->ayahRange() }}</p>
+                                <p class="font-semibold text-teal-950">{{ $item->passageLabel() }}</p>
                                 <p class="text-sm text-slate-500">{{ $dateLabel($item->setoran_date) }} · {{ $item->setoran_date->format('d/m/Y') }}</p>
                                 <p class="mt-1 text-xs text-slate-500">{{ $item->status->hint() }}</p>
                             </div>
@@ -298,13 +298,7 @@
                 @forelse ($attendances as $row)
                     <div class="ui-card flex items-center justify-between gap-3 p-4">
                         <div>
-                            <p class="font-semibold text-teal-950">{{ $dateLabel($row->session->session_date) }} · {{ $row->session->session_date->format('d/m/Y') }}</p>
-                            <p class="text-sm text-slate-500">
-                                {{ $row->session->schedule->timeRange() }}
-                                @if ($row->session->schedule->location)
-                                    · {{ $row->session->schedule->location->name }}
-                                @endif
-                            </p>
+                            <p class="font-semibold text-teal-950">{{ \App\Support\DateLabel::long($row->session->session_date) }}</p>
                             <p class="mt-1 text-xs text-slate-500">{{ $row->status->hint() }}</p>
                         </div>
                         <x-badge :tone="$row->status->value === 'hadir' ? 'ok' : ($row->status->value === 'alfa' ? 'danger' : ($row->status->value === 'izin' ? 'warn' : 'info'))">
@@ -312,7 +306,7 @@
                         </x-badge>
                     </div>
                 @empty
-                    <x-empty>Belum ada absensi. Kehadiran muncul setelah pengajar membuka sesi.</x-empty>
+                    <x-empty>Belum ada absensi. Kehadiran muncul setelah absensi dicatat.</x-empty>
                 @endforelse
             </section>
 
@@ -324,7 +318,7 @@
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <p class="font-semibold text-teal-950">{{ \App\Support\WeekDay::label($slot->day_of_week) }}</p>
-                                <p class="text-sm text-slate-500">{{ $slot->timeRange() }} · {{ $slot->location->name }}</p>
+                                <p class="text-sm text-slate-500">{{ $slot->timeRange() }}</p>
                             </div>
                             @if ($isToday)
                                 <x-badge tone="ok">Hari ini</x-badge>

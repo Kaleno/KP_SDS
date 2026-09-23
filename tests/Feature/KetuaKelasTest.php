@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\AcademicYear;
 use App\Models\Halaqah;
 use App\Models\HalaqahMember;
-use App\Models\Location;
 use App\Models\SantriProfile;
 use App\Models\Schedule;
 use App\Models\User;
@@ -71,7 +70,7 @@ class KetuaKelasTest extends TestCase
             ->assertSessionHasErrors(['name', 'ustaz_user_id', 'days', 'start_time', 'end_time']);
     }
 
-    public function test_creating_kelas_makes_year_location_schedules_and_enrolls_active_santri(): void
+    public function test_creating_kelas_makes_year_schedules_and_enrolls_active_santri(): void
     {
         $ketua = $this->userWithRole(Role::Ketua);
         $ustaz = $this->userWithRole(Role::KetuaPengajar, ['username' => 'ustaz1', 'name' => 'Ustaz Ahmad']);
@@ -87,7 +86,6 @@ class KetuaKelasTest extends TestCase
         $this->assertNotNull($kelas);
         $this->assertSame($ustaz->id, $kelas->ustaz_user_id);
         $this->assertTrue(AcademicYear::query()->where('is_active', true)->exists());
-        $this->assertTrue(Location::query()->where('name', 'Tempat utama')->exists());
         $this->assertSame(5, Schedule::query()->where('halaqah_id', $kelas->id)->where('is_active', true)->count());
         $this->assertTrue(
             HalaqahMember::query()->where('halaqah_id', $kelas->id)->where('santri_id', $first->id)->whereNull('ended_at')->exists()

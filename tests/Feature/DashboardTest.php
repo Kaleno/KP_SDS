@@ -12,7 +12,6 @@ use App\Models\AttendanceSession;
 use App\Models\HafalanSetoran;
 use App\Models\Halaqah;
 use App\Models\HalaqahMember;
-use App\Models\Location;
 use App\Models\QuranSurah;
 use App\Models\SantriProfile;
 use App\Models\Schedule;
@@ -83,29 +82,51 @@ class DashboardTest extends TestCase
         $fx = $this->opsFixture();
         $this->seedTodayActivity($fx);
 
-        $this->actingAs($fx['ketua'])
+        $html = $this->actingAs($fx['ketua'])
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Kelas aktif')
-            ->assertSee('Santri aktif')
-            ->assertSee('Setoran hari ini')
-            ->assertSee('Alfa hari ini')
-            ->assertSee('2/3 anggota sudah setor')
-            ->assertSee('Kehadiran hari ini')
-            ->assertSee('Halaqah Tahfidz A')
-            ->assertSee('07:00')
-            ->assertSee('Masjid Utama')
+            ->assertSee('Jadwal hari ini')
             ->assertSee('Sesi terbuka')
+            ->assertSee('Isi absensi')
             ->assertSee('Perlu perhatian')
             ->assertSee('Yusuf Maulana')
             ->assertSee('Hasan Basri')
             ->assertSee('Al-Fatihah')
             ->assertSee('Belum setor hari ini')
             ->assertSee('Setoran perlu diulang')
+            ->assertSee('Kelas aktif')
+            ->assertSee('Halaqah Tahfidz A')
+            ->assertSee('Setoran hari ini')
+            ->assertSee('Alfa hari ini')
+            ->assertSee('Sesi hari ini')
+            ->assertSee('2/3 anggota sudah setor')
+            ->assertSee('Ringkasan SPP')
             ->assertSee('Minggu ini')
             ->assertSee('Rekap minggu ini')
-            ->assertSee('Alfa minggu ini')
-            ->assertDontSee('Kelas belum siap dipakai');
+            ->assertDontSee('Kehadiran hari ini')
+            ->assertDontSee('Setoran terkini')
+            ->assertDontSee('Alfa minggu ini')
+            ->assertDontSee('Input setoran')
+            ->assertDontSee('Absensi hari ini')
+            ->assertDontSee('Buka sesi')
+            ->assertDontSee('Belum dibuka')
+            ->assertDontSee('Kelas belum siap dipakai')
+            ->assertDontSee('07:00')
+            ->assertDontSee('Masjid Utama')
+            ->getContent();
+
+        $slotPos = strpos($html, 'Jadwal hari ini');
+        $attentionPos = strpos($html, 'Perlu perhatian');
+        $sppPos = strpos($html, 'Ringkasan SPP');
+        $weekPos = strpos($html, 'Minggu ini');
+
+        $this->assertNotFalse($slotPos);
+        $this->assertNotFalse($attentionPos);
+        $this->assertNotFalse($sppPos);
+        $this->assertNotFalse($weekPos);
+        $this->assertTrue($slotPos < $attentionPos);
+        $this->assertTrue($attentionPos < $sppPos);
+        $this->assertTrue($sppPos < $weekPos);
     }
 
     public function test_ustaz_dashboard_shows_their_halaqah_activity(): void
@@ -116,16 +137,22 @@ class DashboardTest extends TestCase
         $this->actingAs($fx['ustaz'])
             ->get(route('dashboard'))
             ->assertOk()
+            ->assertSee('Jadwal hari ini')
+            ->assertSee('Perlu perhatian')
             ->assertSee('Anggota aktif')
             ->assertSee('Sesi hari ini')
             ->assertSee('Setoran hari ini')
             ->assertSee('Alfa hari ini')
             ->assertSee('Kelas Anda')
             ->assertSee('Halaqah Tahfidz A')
-            ->assertSee('07:00')
             ->assertSee('Yusuf Maulana')
             ->assertSee('Al-Fatihah')
-            ->assertSee('Hasan Basri');
+            ->assertSee('Hasan Basri')
+            ->assertDontSee('Ringkasan SPP')
+            ->assertDontSee('Setoran terkini')
+            ->assertDontSee('Kehadiran hari ini')
+            ->assertDontSee('07:00')
+            ->assertDontSee('Masjid Utama');
     }
 
     public function test_ketua_without_halaqah_sees_setup_banner(): void
@@ -168,7 +195,6 @@ class DashboardTest extends TestCase
             'end_date' => '2027-06-30',
             'is_active' => true,
         ]);
-        $location = Location::query()->create(['name' => 'Masjid Utama']);
         $halaqah = Halaqah::query()->create([
             'academic_year_id' => $year->id,
             'ustaz_user_id' => $ustaz->id,
@@ -190,7 +216,6 @@ class DashboardTest extends TestCase
 
         $schedule = Schedule::query()->create([
             'halaqah_id' => $halaqah->id,
-            'location_id' => $location->id,
             'day_of_week' => now()->isoWeekday(),
             'start_time' => '07:00:00',
             'end_time' => '08:30:00',

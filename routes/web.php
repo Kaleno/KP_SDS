@@ -75,10 +75,6 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('pendaftaran/{registration}/approve', [KetuaSantriRegistrationController::class, 'approve'])->name('registrations.approve');
         Route::post('pendaftaran/{registration}/reject', [KetuaSantriRegistrationController::class, 'reject'])->name('registrations.reject');
 
-        Route::get('libur', [HolidayController::class, 'index'])->name('holidays.index');
-        Route::post('libur', [HolidayController::class, 'store'])->name('holidays.store');
-        Route::delete('libur/{holiday}', [HolidayController::class, 'destroy'])->name('holidays.destroy');
-
         Route::get('keuangan', [FinanceController::class, 'index'])->name('finance.index');
         Route::post('keuangan', [FinanceController::class, 'store'])->name('finance.store');
         Route::put('keuangan/spp', [FinanceController::class, 'updateSppAmount'])->name('finance.spp-amount');
@@ -100,9 +96,14 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::delete('kelas/{halaqah}/jadwal/{schedule}', [ScheduleController::class, 'destroy'])->name('halaqah.schedules.destroy');
     });
 
+    Route::middleware('role:'.Role::Ketua.'|'.Role::KetuaPengajar)->prefix('ketua')->name('ketua.')->group(function () {
+        Route::get('libur', [HolidayController::class, 'index'])->name('holidays.index');
+        Route::post('libur', [HolidayController::class, 'store'])->name('holidays.store');
+        Route::delete('libur/{holiday}', [HolidayController::class, 'destroy'])->name('holidays.destroy');
+    });
+
     Route::middleware('role:'.Role::Ketua.'|'.Role::KetuaPengajar.'|'.Role::Pengajar)->prefix('ops')->name('ops.')->group(function () {
         Route::get('absensi', [AttendanceController::class, 'index'])->name('attendance.index');
-        Route::post('absensi/{schedule}/buka', [AttendanceController::class, 'open'])->name('attendance.open');
         Route::get('absensi/sesi/{attendanceSession}', [AttendanceController::class, 'show'])->name('attendance.show');
         Route::put('absensi/sesi/{attendanceSession}', [AttendanceController::class, 'update'])->name('attendance.update');
 

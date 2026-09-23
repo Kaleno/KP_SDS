@@ -12,6 +12,7 @@ use App\Models\Halaqah;
 use App\Models\SantriProfile;
 use App\Models\Schedule;
 use App\Models\User;
+use App\Support\DateLabel;
 use App\Support\OperationalAccess;
 use App\Support\Role;
 use App\Support\WeekDay;
@@ -21,13 +22,19 @@ use Illuminate\Support\Collection;
 
 class OperationalDashboard
 {
-    public function __construct(private OperationalAccess $access) {}
+    public function __construct(
+        private OperationalAccess $access,
+        private AttendanceSessionService $sessions,
+        private OperationalCalendar $calendar,
+    ) {}
 
     /**
      * @return array{
      *     year: AcademicYear|null,
      *     dayLabel: string,
      *     todayLabel: string,
+     *     isOffDay: bool,
+     *     offDayMessage: string|null,
      *     stats: array{
      *         halaqah: int,
      *         santriAktif: int,
@@ -66,25 +73,20 @@ class OperationalDashboard
     public function for(User $user): array
     {
         $year = AcademicYear::query()->aktif()->first();
-        $today = now()->toDateString();
-        $day = now()->isoWeekday();
+        $today = now();
+        $todayDate = $today->toDateString();
+        $day = $today->isoWeekday();
         $halaqahIds = $this->access->halaqahQuery($user)->aktif()->pluck('id');
+        $isOffDay = $this->calendar->isOffDay($today);
 
-        $todaySlots = $halaqahIds->isEmpty()
+        $todaySlots = $halaqahIds->isEmpty() || $isOffDay
             ? collect()
-            : Schedule::query()
-                ->with(['halaqah.ustaz', 'location'])
-                ->with(['sessions' => fn ($query) => $query->whereDate('session_date', $today)])
-                ->whereIn('halaqah_id', $halaqahIds)
-                ->where('is_active', true)
-                ->where('day_of_week', $day)
-                ->orderBy('start_time')
-                ->get();
+            : $this->sessions->ensureForDate($user, $halaqahIds, $today);
 
-        $attendanceToday = $this->attendanceCountsBetween($halaqahIds, $today, $today, $year);
-        $setoranHariIni = $this->setoranCountToday($halaqahIds, $today, $year);
+        $attendanceToday = $this->attendanceCountsBetween($halaqahIds, $todayDate, $todayDate, $year);
+        $setoranHariIni = $this->setoranCountToday($halaqahIds, $todayDate, $year);
         $anggotaIds = $this->guidedAktifSantriIds($user);
-        $sudahSetorHariIni = $this->sudahSetorCount($anggotaIds, $today, $year);
+        $sudahSetorHariIni = $this->sudahSetorCount($anggotaIds, $todayDate, $year);
 
         $santriAktif = $user->hasRole(Role::Ketua)
             ? SantriProfile::query()->aktif()->count()
@@ -102,11 +104,11 @@ class OperationalDashboard
         $setoranByHalaqah = $this->countByHalaqah(
             HafalanSetoran::query()
                 ->whereIn('halaqah_id', $halaqahIds)
-                ->whereDate('setoran_date', $today)
+                ->whereDate('setoran_date', $todayDate)
                 ->when($year, fn ($query) => $query->where('academic_year_id', $year->id)),
         );
 
-        $alfaByHalaqah = $this->countByHalaqahFromAttendance($halaqahIds, $today, $year, AttendanceStatus::Alfa);
+        $alfaByHalaqah = $this->countByHalaqahFromAttendance($halaqahIds, $todayDate, $year, AttendanceStatus::Alfa);
 
         $halaqahRows = $halaqahList->map(fn (Halaqah $halaqah): array => [
             'halaqah' => $halaqah,
@@ -116,13 +118,15 @@ class OperationalDashboard
         ]);
 
         $weekFrom = now()->copy()->startOfWeek(Carbon::MONDAY)->toDateString();
-        $weekTo = $today;
+        $weekTo = $todayDate;
         $weekCounts = $this->attendanceCountsBetween($halaqahIds, $weekFrom, $weekTo, $year);
 
         return [
             'year' => $year,
             'dayLabel' => WeekDay::label($day),
-            'todayLabel' => now()->format('d/m/Y'),
+            'todayLabel' => DateLabel::dayMonthYear(now()),
+            'isOffDay' => $isOffDay,
+            'offDayMessage' => $isOffDay ? $this->calendar->offDayMessage($today) : null,
             'stats' => [
                 'halaqah' => $halaqahList->count(),
                 'santriAktif' => $santriAktif,
@@ -140,9 +144,9 @@ class OperationalDashboard
             'todaySlots' => $todaySlots,
             'halaqahRows' => $halaqahRows,
             'recentSetoran' => $this->recentSetoran($halaqahIds, $year),
-            'alfaToday' => $this->alfaToday($halaqahIds, $today, $year),
-            'pendingSetoran' => $this->pendingSetoran($user, $year, $today),
-            'followUpSetoran' => $this->followUpSetoran($halaqahIds, $today, $year),
+            'alfaToday' => $this->alfaToday($halaqahIds, $todayDate, $year),
+            'pendingSetoran' => $this->pendingSetoran($user, $year, $todayDate),
+            'followUpSetoran' => $this->followUpSetoran($halaqahIds, $todayDate, $year),
             'week' => [
                 'from' => $weekFrom,
                 'to' => $weekTo,

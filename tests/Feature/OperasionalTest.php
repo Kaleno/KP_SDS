@@ -12,7 +12,6 @@ use App\Models\AttendanceSession;
 use App\Models\HafalanSetoran;
 use App\Models\Halaqah;
 use App\Models\HalaqahMember;
-use App\Models\Location;
 use App\Models\QuranSurah;
 use App\Models\SantriProfile;
 use App\Models\Schedule;
@@ -32,13 +31,14 @@ class OperasionalTest extends TestCase
         $this->seed(RoleSeeder::class);
     }
 
-    public function test_ustaz_can_open_today_session_and_save_mixed_status(): void
+    public function test_ustaz_auto_session_allows_saving_mixed_status(): void
     {
         $fx = $this->opsFixture();
 
         $this->actingAs($fx['ustaz'])
-            ->post(route('ops.attendance.open', $fx['schedule']))
-            ->assertRedirect();
+            ->get(route('ops.attendance.index'))
+            ->assertOk()
+            ->assertSee('Isi absensi');
 
         $session = AttendanceSession::query()->first();
         $this->assertNotNull($session);
@@ -58,7 +58,7 @@ class OperasionalTest extends TestCase
         $this->assertSame(1, Attendance::query()->where('status', AttendanceStatus::Izin)->count());
     }
 
-    public function test_other_ustaz_cannot_see_or_open_session(): void
+    public function test_other_ustaz_cannot_see_session(): void
     {
         $fx = $this->opsFixture();
         $outsider = $this->userWithRole(Role::Pengajar, ['username' => 'ustaz2']);
@@ -66,11 +66,7 @@ class OperasionalTest extends TestCase
         $this->actingAs($outsider)
             ->get(route('ops.attendance.index'))
             ->assertOk()
-            ->assertDontSee($fx['halaqah']->name);
-
-        $this->actingAs($outsider)
-            ->post(route('ops.attendance.open', $fx['schedule']))
-            ->assertForbidden();
+            ->assertDontSee('Isi absensi');
 
         $session = AttendanceSession::query()->create([
             'schedule_id' => $fx['schedule']->id,
@@ -87,7 +83,7 @@ class OperasionalTest extends TestCase
     {
         $fx = $this->opsFixture();
 
-        $this->actingAs($fx['ustaz'])->post(route('ops.attendance.open', $fx['schedule']));
+        $this->actingAs($fx['ustaz'])->get(route('ops.attendance.index'));
         $session = AttendanceSession::query()->first();
 
         $this->actingAs($fx['ustaz'])
@@ -312,7 +308,7 @@ class OperasionalTest extends TestCase
         $fx = $this->opsFixture();
         $this->seedFatihah();
 
-        $this->actingAs($fx['ustaz'])->post(route('ops.attendance.open', $fx['schedule']));
+        $this->actingAs($fx['ustaz'])->get(route('ops.attendance.index'));
         $session = AttendanceSession::query()->first();
 
         $this->actingAs($fx['ustaz'])->put(route('ops.attendance.update', $session), [
@@ -356,8 +352,9 @@ class OperasionalTest extends TestCase
         $fx = $this->opsFixture();
 
         $this->actingAs($fx['ketua'])
-            ->post(route('ops.attendance.open', $fx['schedule']))
-            ->assertRedirect();
+            ->get(route('ops.attendance.index'))
+            ->assertOk()
+            ->assertSee('Isi absensi');
 
         $this->assertTrue(AttendanceSession::query()->exists());
     }
@@ -394,7 +391,7 @@ class OperasionalTest extends TestCase
      */
     private function saveMixedAttendance(array $fx): AttendanceSession
     {
-        $this->actingAs($fx['ustaz'])->post(route('ops.attendance.open', $fx['schedule']));
+        $this->actingAs($fx['ustaz'])->get(route('ops.attendance.index'));
         $session = AttendanceSession::query()->first();
 
         $rows = [];
@@ -423,7 +420,6 @@ class OperasionalTest extends TestCase
             'end_date' => '2027-06-30',
             'is_active' => true,
         ]);
-        $location = Location::query()->create(['name' => 'Masjid Utama']);
         $halaqah = Halaqah::query()->create([
             'academic_year_id' => $year->id,
             'ustaz_user_id' => $ustaz->id,
@@ -445,7 +441,6 @@ class OperasionalTest extends TestCase
 
         $schedule = Schedule::query()->create([
             'halaqah_id' => $halaqah->id,
-            'location_id' => $location->id,
             'day_of_week' => now()->isoWeekday(),
             'start_time' => '07:00:00',
             'end_time' => '08:30:00',

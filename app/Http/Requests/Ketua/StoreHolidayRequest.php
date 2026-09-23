@@ -11,7 +11,7 @@ class StoreHolidayRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('manage-master') ?? false;
+        return $this->user()?->can('manage-holidays') ?? false;
     }
 
     /**
