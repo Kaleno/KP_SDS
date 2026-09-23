@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\SetoranStatus;
 use App\Enums\SetoranSubtype;
-use App\Models\AcademicYear;
 use App\Models\HafalanSetoran;
 use App\Models\QuranJuz;
 use App\Models\QuranSurah;
@@ -20,12 +19,9 @@ class HafalanProgress
 
     public function forSantri(
         SantriProfile $santri,
-        AcademicYear|int $year,
         ?SetoranSubtype $subtype = null,
     ): HafalanProgressResult {
-        $yearId = $year instanceof AcademicYear ? (int) $year->id : $year;
-
-        return $this->forMany([$santri->id], $yearId, $subtype)[$santri->id];
+        return $this->forMany([$santri->id], $subtype)[$santri->id];
     }
 
     /**
@@ -34,10 +30,8 @@ class HafalanProgress
      */
     public function forMany(
         iterable $santriIds,
-        AcademicYear|int $year,
         ?SetoranSubtype $subtype = null,
     ): array {
-        $yearId = $year instanceof AcademicYear ? (int) $year->id : $year;
         $ids = array_values(array_unique(array_map(
             intval(...),
             is_array($santriIds) ? $santriIds : iterator_to_array($santriIds),
@@ -56,7 +50,6 @@ class HafalanProgress
 
         $query = HafalanSetoran::query()
             ->whereIn('santri_id', $ids)
-            ->where('academic_year_id', $yearId)
             ->where('status', SetoranStatus::Lulus)
             ->whereNotNull('quran_surah_id');
 

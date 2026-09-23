@@ -9,16 +9,14 @@ use App\Enums\RegistrationStatus;
 use App\Enums\SantriStatus;
 use App\Enums\SantriTrack;
 use App\Enums\SchoolLevel;
+use App\Enums\SetoranCategory;
 use App\Enums\SetoranStatus;
-use App\Models\AcademicYear;
+use App\Enums\SetoranSubtype;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Models\HafalanSetoran;
-use App\Models\Halaqah;
-use App\Models\HalaqahMember;
 use App\Models\SantriProfile;
 use App\Models\SantriRegistration;
-use App\Models\Schedule;
 use App\Models\User;
 use App\Support\AppSettings;
 use App\Support\Role;
@@ -28,15 +26,16 @@ class DemoDataSeeder extends Seeder
 {
     public function run(): void
     {
-        $year = AcademicYear::query()->updateOrCreate(
-            ['name' => '2026/2027'],
+        $ketua = User::query()->updateOrCreate(
+            ['username' => 'ketua'],
             [
-                'start_date' => '2026-07-01',
-                'end_date' => '2027-06-30',
-                'is_active' => false,
+                'name' => 'Ketua DKM',
+                'email' => 'ketua@kp-sds.test',
+                'password' => 'password',
+                'is_active' => true,
             ],
         );
-        $year->markAsActive();
+        $ketua->syncRoles([Role::Ketua]);
 
         $ustaz = User::query()->updateOrCreate(
             ['username' => 'ustaz1'],
@@ -60,13 +59,11 @@ class DemoDataSeeder extends Seeder
         );
         $pengajar->syncRoles([Role::Pengajar]);
 
-        User::query()->where('username', 'ketua')->update(['name' => 'Ketua DKM']);
-
         $santriData = [
-            ['nis' => '2026001', 'name' => 'Ahmad Fauzi', 'gender' => Gender::LakiLaki, 'track' => 'alquran'],
-            ['nis' => '2026002', 'name' => 'Hasan Basri', 'gender' => Gender::LakiLaki, 'track' => 'alquran'],
-            ['nis' => '2026003', 'name' => 'Yusuf Maulana', 'gender' => Gender::LakiLaki, 'track' => 'alquran'],
-            ['nis' => '2026004', 'name' => 'Siti Aisyah', 'gender' => Gender::Perempuan, 'track' => 'iqro'],
+            ['nis' => '2026001', 'name' => 'Ahmad Fauzi', 'gender' => Gender::LakiLaki, 'track' => SantriTrack::Alquran],
+            ['nis' => '2026002', 'name' => 'Hasan Basri', 'gender' => Gender::LakiLaki, 'track' => SantriTrack::Alquran],
+            ['nis' => '2026003', 'name' => 'Yusuf Maulana', 'gender' => Gender::LakiLaki, 'track' => SantriTrack::Alquran],
+            ['nis' => '2026004', 'name' => 'Siti Aisyah', 'gender' => Gender::Perempuan, 'track' => SantriTrack::Iqro],
         ];
 
         $profiles = collect($santriData)->map(function (array $row) {
@@ -88,114 +85,16 @@ class DemoDataSeeder extends Seeder
                     'gender' => $row['gender'],
                     'birth_date' => '2012-01-15',
                     'parent_name' => 'Orang Tua Demo',
-                    'school_level' => 'sd',
+                    'school_level' => SchoolLevel::Sd,
                     'track' => $row['track'],
+                    'iqro_level' => $row['track'] === SantriTrack::Iqro ? 1 : null,
                     'status' => SantriStatus::Aktif,
                 ],
             );
         });
 
-        $halaqah = Halaqah::query()->updateOrCreate(
-            [
-                'name' => 'Halaqah Tahfidz A',
-                'academic_year_id' => $year->id,
-            ],
-            [
-                'ustaz_user_id' => $ustaz->id,
-                'is_active' => true,
-            ],
-        );
-
-        foreach ($profiles as $profile) {
-            $already = HalaqahMember::query()
-                ->where('santri_id', $profile->id)
-                ->where('academic_year_id', $year->id)
-                ->whereNull('ended_at')
-                ->exists();
-
-            if (! $already) {
-                HalaqahMember::query()->create([
-                    'halaqah_id' => $halaqah->id,
-                    'santri_id' => $profile->id,
-                    'academic_year_id' => $year->id,
-                    'started_at' => '2026-07-01',
-                ]);
-            }
-        }
-
-        $slots = [
-            ['day_of_week' => 1, 'start_time' => '07:00:00', 'end_time' => '08:30:00'],
-            ['day_of_week' => 2, 'start_time' => '07:00:00', 'end_time' => '08:30:00'],
-            ['day_of_week' => 3, 'start_time' => '07:00:00', 'end_time' => '08:30:00'],
-            ['day_of_week' => 4, 'start_time' => '07:00:00', 'end_time' => '08:30:00'],
-            ['day_of_week' => 5, 'start_time' => '07:00:00', 'end_time' => '08:30:00'],
-        ];
-
-        foreach ($slots as $slot) {
-            Schedule::query()->updateOrCreate(
-                [
-                    'halaqah_id' => $halaqah->id,
-                    'day_of_week' => $slot['day_of_week'],
-                    'start_time' => $slot['start_time'],
-                ],
-                [
-                    'end_time' => $slot['end_time'],
-                    'is_active' => true,
-                ],
-            );
-        }
-
-        $halaqahPengajar = Halaqah::query()->updateOrCreate(
-            [
-                'name' => 'Halaqah Iqro B',
-                'academic_year_id' => $year->id,
-            ],
-            [
-                'ustaz_user_id' => $pengajar->id,
-                'is_active' => true,
-            ],
-        );
-
-        foreach ($slots as $slot) {
-            Schedule::query()->updateOrCreate(
-                [
-                    'halaqah_id' => $halaqahPengajar->id,
-                    'day_of_week' => $slot['day_of_week'],
-                    'start_time' => $slot['start_time'],
-                ],
-                [
-                    'end_time' => $slot['end_time'],
-                    'is_active' => true,
-                ],
-            );
-        }
-
-        $iqroSantri = $profiles->first(
-            fn (SantriProfile $profile): bool => $profile->track === SantriTrack::Iqro
-        );
-        if ($iqroSantri) {
-            $alreadyInPengajarClass = HalaqahMember::query()
-                ->where('halaqah_id', $halaqahPengajar->id)
-                ->where('santri_id', $iqroSantri->id)
-                ->whereNull('ended_at')
-                ->exists();
-
-            if (! $alreadyInPengajarClass) {
-                HalaqahMember::query()->where('santri_id', $iqroSantri->id)
-                    ->where('academic_year_id', $year->id)
-                    ->whereNull('ended_at')
-                    ->update(['ended_at' => now()->toDateString()]);
-
-                HalaqahMember::query()->create([
-                    'halaqah_id' => $halaqahPengajar->id,
-                    'santri_id' => $iqroSantri->id,
-                    'academic_year_id' => $year->id,
-                    'started_at' => '2026-07-01',
-                ]);
-            }
-        }
-
-        $today = now()->toDateString();
+        $today = now();
+        $todayDate = $today->toDateString();
         $first = $profiles->first();
         $second = $profiles->skip(1)->first();
 
@@ -206,15 +105,13 @@ class DemoDataSeeder extends Seeder
                 'ayah_start' => 1,
                 'ayah_end' => 7,
                 'status' => SetoranStatus::Lulus,
-                'setoran_date' => $today,
+                'setoran_date' => $todayDate,
             ],
             [
-                'halaqah_id' => $halaqah->id,
                 'ustaz_user_id' => $ustaz->id,
-                'academic_year_id' => $year->id,
                 'activity_type' => ActivityType::Ngaji,
-                'category' => 'bacaan',
-                'subtype' => 'alquran',
+                'category' => SetoranCategory::Bacaan,
+                'subtype' => SetoranSubtype::Alquran,
                 'note' => 'Demo Al-Fatihah lancar',
             ],
         );
@@ -226,34 +123,24 @@ class DemoDataSeeder extends Seeder
                 'ayah_start' => 1,
                 'ayah_end' => 7,
                 'status' => SetoranStatus::Mengulang,
-                'setoran_date' => $today,
+                'setoran_date' => $todayDate,
             ],
             [
-                'halaqah_id' => $halaqah->id,
                 'ustaz_user_id' => $ustaz->id,
-                'academic_year_id' => $year->id,
                 'activity_type' => ActivityType::Ngaji,
-                'category' => 'bacaan',
-                'subtype' => 'alquran',
+                'category' => SetoranCategory::Bacaan,
+                'subtype' => SetoranSubtype::Alquran,
                 'note' => 'Demo Al-Fatihah ulang',
             ],
         );
 
-        $todaySchedule = Schedule::query()
-            ->where('halaqah_id', $halaqah->id)
-            ->where('day_of_week', now()->isoWeekday())
-            ->first();
-
-        if ($todaySchedule) {
+        if ($today->isWeekday()) {
             $session = AttendanceSession::query()->firstOrCreate(
-                [
-                    'schedule_id' => $todaySchedule->id,
-                    'session_date' => $today,
-                ],
+                ['session_date' => $todayDate],
                 ['opened_by_user_id' => $ustaz->id],
             );
 
-            $demoStatuses = [AttendanceStatus::Hadir, AttendanceStatus::Hadir, AttendanceStatus::Alfa];
+            $demoStatuses = [AttendanceStatus::Hadir, AttendanceStatus::Hadir, AttendanceStatus::Alfa, AttendanceStatus::Hadir];
             foreach ($profiles->values() as $index => $profile) {
                 Attendance::query()->updateOrCreate(
                     [

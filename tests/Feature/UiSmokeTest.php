@@ -6,12 +6,9 @@ use App\Enums\AttendanceStatus;
 use App\Enums\Gender;
 use App\Enums\SantriStatus;
 use App\Enums\SetoranStatus;
-use App\Models\AcademicYear;
+use App\Models\AttendanceSession;
 use App\Models\HafalanSetoran;
-use App\Models\Halaqah;
-use App\Models\HalaqahMember;
 use App\Models\SantriProfile;
-use App\Models\Schedule;
 use App\Models\User;
 use App\Support\Role;
 use Database\Seeders\QuranSeeder;
@@ -28,18 +25,16 @@ class UiSmokeTest extends TestCase
         parent::setUp();
         $this->seed(RoleSeeder::class);
         $this->seed(QuranSeeder::class);
+        $this->travelTo('2026-09-23 10:00:00');
     }
 
     public function test_all_role_pages_render_and_progress_matches_across_surfaces(): void
     {
         $fx = $this->smokeFixture();
 
-        $this->actingAs($fx['ketua'])->get(route('dashboard'))->assertOk()->assertSee('Kelas aktif');
-        $this->actingAs($fx['ketua'])->get(route('ketua.academic-years.index'))->assertOk();
+        $this->actingAs($fx['ketua'])->get(route('dashboard'))->assertOk()->assertSee('Santri aktif');
         $this->actingAs($fx['ketua'])->get(route('ketua.ustaz.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ketua.santri.index'))->assertOk()->assertSee('Ahmad Fauzi');
-        $this->actingAs($fx['ketua'])->get(route('ketua.halaqah.index'))->assertOk();
-        $this->actingAs($fx['ketua'])->get(route('ketua.halaqah.show', $fx['halaqah']))->assertRedirect(route('ketua.halaqah.edit', $fx['halaqah']));
         $this->actingAs($fx['ketua'])->get(route('ketua.registrations.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ketua.holidays.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ketua.finance.index'))->assertOk()->assertSee('Pengaturan SPP');
@@ -49,7 +44,7 @@ class UiSmokeTest extends TestCase
         $this->actingAs($fx['ketua'])->get(route('ops.setoran.index', ['date_from' => '2026-02-31']))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('ops.spp.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('laporan.attendance.index', ['date_from' => 'bukan-tanggal']))->assertOk();
-        $this->actingAs($fx['ketua'])->get(route('ketua.setup.create'))->assertRedirect(route('ketua.halaqah.create'));
+        $this->actingAs($fx['ketua'])->get(route('ketua.setup.create'))->assertRedirect(route('ketua.santri.index'));
         $this->actingAs($fx['ketua'])->get(route('ops.setoran.create'))->assertOk()->assertSee('id="ayah_start"', false);
         $this->actingAs($fx['ketua'])->get(route('laporan.progress.index'))->assertRedirect(route('laporan.progress.bacaan.index'));
         $this->actingAs($fx['ketua'])->get(route('laporan.progress.bacaan.index'))->assertOk()->assertSee('4.73%')->assertSee('Bacaan')->assertSee('Hafalan');
@@ -57,9 +52,12 @@ class UiSmokeTest extends TestCase
         $this->actingAs($fx['ketua'])->get(route('laporan.attendance.index'))->assertOk();
         $this->actingAs($fx['ketua'])->get(route('profile.edit'))->assertOk();
 
+        $this->get('/ketua/halaqah')->assertNotFound();
+        $this->get('/ketua/academic-years')->assertNotFound();
+
         $this->actingAs($fx['ustaz'])->get(route('dashboard'))->assertOk();
         $this->actingAs($fx['ustaz'])->get(route('ops.attendance.index'))->assertOk();
-        $session = $fx['schedule']->sessions()->first();
+        $session = AttendanceSession::query()->whereDate('session_date', now()->toDateString())->firstOrFail();
         $this->actingAs($fx['ustaz'])->get(route('ops.attendance.show', $session))->assertOk()->assertSee('Ahmad Fauzi');
 
         $rows = [];
@@ -105,8 +103,6 @@ class UiSmokeTest extends TestCase
      *     admin: User,
      *     ketua: User,
      *     ustaz: User,
-     *     halaqah: Halaqah,
-     *     schedule: Schedule,
      *     santri: list<SantriProfile>
      * }
      */
@@ -115,44 +111,15 @@ class UiSmokeTest extends TestCase
         $admin = $this->userWithRole(Role::SuperAdmin, ['username' => 'superadmin']);
         $ketua = $this->userWithRole(Role::Ketua, ['username' => 'ketua']);
         $ustaz = $this->userWithRole(Role::KetuaPengajar, ['username' => 'ustaz1']);
-        $year = AcademicYear::query()->create([
-            'name' => '2026/2027',
-            'start_date' => '2026-07-01',
-            'end_date' => '2027-06-30',
-            'is_active' => true,
-        ]);
-        $halaqah = Halaqah::query()->create([
-            'academic_year_id' => $year->id,
-            'ustaz_user_id' => $ustaz->id,
-            'name' => 'Halaqah Tahfidz A',
-            'is_active' => true,
-        ]);
 
         $santri = [];
         foreach (['2026001' => 'Ahmad Fauzi', '2026002' => 'Hasan Basri', '2026003' => 'Yusuf Maulana'] as $nis => $name) {
-            $profile = $this->makeSantri($nis, $name);
-            HalaqahMember::query()->create([
-                'halaqah_id' => $halaqah->id,
-                'santri_id' => $profile->id,
-                'academic_year_id' => $year->id,
-                'started_at' => '2026-07-01',
-            ]);
-            $santri[] = $profile;
+            $santri[] = $this->makeSantri($nis, $name);
         }
-
-        $schedule = Schedule::query()->create([
-            'halaqah_id' => $halaqah->id,
-            'day_of_week' => now()->isoWeekday(),
-            'start_time' => '07:00:00',
-            'end_time' => '08:30:00',
-            'is_active' => true,
-        ]);
 
         HafalanSetoran::query()->create([
             'santri_id' => $santri[0]->id,
-            'halaqah_id' => $halaqah->id,
             'ustaz_user_id' => $ustaz->id,
-            'academic_year_id' => $year->id,
             'activity_type' => 'ngaji',
             'category' => 'bacaan',
             'subtype' => 'alquran',
@@ -163,7 +130,7 @@ class UiSmokeTest extends TestCase
             'status' => SetoranStatus::Lulus,
         ]);
 
-        return compact('admin', 'ketua', 'ustaz', 'halaqah', 'schedule', 'santri');
+        return compact('admin', 'ketua', 'ustaz', 'santri');
     }
 
     private function userWithRole(string $role, array $attrs = []): User

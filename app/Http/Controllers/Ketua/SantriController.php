@@ -6,7 +6,6 @@ use App\Http\Requests\Ketua\StoreSantriRequest;
 use App\Http\Requests\Ketua\UpdateSantriRequest;
 use App\Models\SantriProfile;
 use App\Models\User;
-use App\Services\HalaqahMembershipService;
 use App\Support\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -14,8 +13,6 @@ use Illuminate\View\View;
 
 class SantriController extends KetuaController
 {
-    public function __construct(private HalaqahMembershipService $memberships) {}
-
     public function index(): View
     {
         return view('ketua.santri.index', [
@@ -41,7 +38,7 @@ class SantriController extends KetuaController
             ]);
             $user->assignRole(Role::Santri);
 
-            $santri = SantriProfile::query()->create([
+            SantriProfile::query()->create([
                 'user_id' => $user->id,
                 'nis' => $request->string('nis')->toString(),
                 'gender' => $request->string('gender')->toString(),
@@ -52,8 +49,6 @@ class SantriController extends KetuaController
                 'iqro_level' => $request->string('track')->toString() === 'iqro' ? 1 : null,
                 'status' => $request->string('status')->toString(),
             ]);
-
-            $this->memberships->syncSantriAcrossActiveClasses($santri);
         });
 
         return redirect()->route('ketua.santri.index')->with('status', 'Santri disimpan.');
@@ -89,7 +84,6 @@ class SantriController extends KetuaController
             if ($santri->track?->value === 'iqro' && ! $santri->iqro_level) {
                 $santri->update(['iqro_level' => 1]);
             }
-            $this->memberships->syncSantriAcrossActiveClasses($santri->fresh());
         });
 
         return redirect()->route('ketua.santri.index')->with('status', 'Santri diperbarui.');

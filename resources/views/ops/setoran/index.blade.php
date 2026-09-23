@@ -121,7 +121,7 @@
                         <p class="text-xs text-slate-500">{{ $item->typeLabel() }}</p>
                         <p class="text-sm text-slate-600">{{ $item->passageLabel() }}</p>
                         <p class="text-sm text-slate-500">
-                            {{ \App\Support\DateLabel::long($item->setoran_date) }} · {{ $item->halaqah->name }}
+                            {{ \App\Support\DateLabel::long($item->setoran_date) }}
                         </p>
                     </div>
                     <x-badge :tone="$item->status->value === 'lulus' ? 'ok' : 'warn'">

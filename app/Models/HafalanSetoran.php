@@ -13,9 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'santri_id',
-    'halaqah_id',
     'ustaz_user_id',
-    'academic_year_id',
     'activity_type',
     'category',
     'subtype',
@@ -61,14 +59,6 @@ class HafalanSetoran extends Model
     }
 
     /**
-     * @return BelongsTo<Halaqah, $this>
-     */
-    public function halaqah(): BelongsTo
-    {
-        return $this->belongsTo(Halaqah::class);
-    }
-
-    /**
      * @return BelongsTo<User, $this>
      */
     public function ustaz(): BelongsTo
@@ -82,14 +72,6 @@ class HafalanSetoran extends Model
     public function surah(): BelongsTo
     {
         return $this->belongsTo(QuranSurah::class, 'quran_surah_id');
-    }
-
-    /**
-     * @return BelongsTo<AcademicYear, $this>
-     */
-    public function academicYear(): BelongsTo
-    {
-        return $this->belongsTo(AcademicYear::class);
     }
 
     public function isIqro(): bool

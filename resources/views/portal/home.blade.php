@@ -4,7 +4,7 @@
             <p class="ui-section-title">Santri</p>
             <h1 class="font-display text-2xl font-semibold text-teal-950">Beranda</h1>
             <p class="mt-0.5 text-sm text-slate-500">
-                {{ $year?->name ?? 'Belum ada tahun ajaran aktif' }} · hanya melihat, tidak mengubah data
+                Hanya melihat, tidak mengubah data
             </p>
         </div>
     </x-slot>
@@ -44,9 +44,6 @@
                 </p>
                 <p class="mt-1 text-sm text-teal-100/80">
                     NIS {{ $santri->nis }}
-                    @if ($membership)
-                        · {{ $membership->halaqah->name }} · Pengajar {{ $membership->halaqah->ustaz->name }}
-                    @endif
                 </p>
                 <p class="mt-3 text-sm text-teal-100/75">
                     Catatan bacaan, hafalan, dan kehadiranmu dari pengajar.
@@ -188,12 +185,9 @@
                             @if ($todayAttendance)
                                 <p class="mt-2 font-display text-xl font-semibold text-teal-950">{{ $todayAttendance->status->label() }}</p>
                                 <p class="mt-1 text-xs text-slate-500">{{ $todayAttendance->status->hint() }}</p>
-                            @elseif ($todaySlots->isNotEmpty())
-                                <p class="mt-2 font-display text-xl font-semibold text-slate-700">Belum dicatat</p>
-                                <p class="mt-1 text-xs text-slate-500">Sesi hari ini belum diisi pengajar</p>
                             @else
-                                <p class="mt-2 font-display text-xl font-semibold text-slate-700">Tidak ada sesi</p>
-                                <p class="mt-1 text-xs text-slate-500">Tidak ada jadwal halaqah hari ini</p>
+                                <p class="mt-2 font-display text-xl font-semibold text-slate-700">Belum dicatat</p>
+                                <p class="mt-1 text-xs text-slate-500">Absensi hari ini belum diisi pengajar</p>
                             @endif
                         </div>
                         <div class="ui-card p-4">
@@ -207,14 +201,9 @@
                             @endif
                         </div>
                         <div class="ui-card p-4">
-                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Jadwal</p>
-                            @if ($todaySlots->isNotEmpty())
-                                <p class="mt-2 font-display text-xl font-semibold text-teal-950">Hari ini</p>
-                                <p class="mt-1 text-xs text-slate-500">{{ \App\Support\DateLabel::long(now()) }}</p>
-                            @else
-                                <p class="mt-2 font-display text-xl font-semibold text-slate-700">Libur halaqah</p>
-                                <p class="mt-1 text-xs text-slate-500">Lihat jadwal mingguan di bawah</p>
-                            @endif
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Hari ini</p>
+                            <p class="mt-2 font-display text-xl font-semibold text-teal-950">{{ $snapshot['dayLabel'] ?? '' }}</p>
+                            <p class="mt-1 text-xs text-slate-500">{{ \App\Support\DateLabel::long(now()) }}</p>
                         </div>
                     </div>
                 </section>
@@ -268,8 +257,8 @@
                         </x-card>
                     @endif
                 </section>
-            @elseif ($year)
-                <x-empty>Belum ada progress bacaan/hafalan pada tahun ajaran ini.</x-empty>
+            @else
+                <x-empty>Belum ada progress bacaan/hafalan.</x-empty>
             @endif
 
             <section id="setoran" class="scroll-mt-24 space-y-2">
@@ -288,7 +277,7 @@
                         </div>
                     </div>
                 @empty
-                    <x-empty>Belum ada setoran. Pengajar akan mencatat setoran setelah pertemuan halaqah.</x-empty>
+                    <x-empty>Belum ada setoran. Pengajar akan mencatat setoran setelah pertemuan.</x-empty>
                 @endforelse
             </section>
 
@@ -333,26 +322,6 @@
                     </div>
                 @empty
                     <x-empty>Belum ada absensi. Kehadiran muncul setelah absensi dicatat.</x-empty>
-                @endforelse
-            </section>
-
-            <section id="jadwal" class="scroll-mt-24 space-y-2">
-                <h2 class="ui-section-title px-1">Jadwal halaqah</h2>
-                @forelse ($schedules as $slot)
-                    @php $isToday = (int) $slot->day_of_week === now()->isoWeekday(); @endphp
-                    <div class="ui-card p-4 {{ $isToday ? 'border-teal-200 bg-teal-50/60' : '' }}">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <p class="font-semibold text-teal-950">{{ \App\Support\WeekDay::label($slot->day_of_week) }}</p>
-                                <p class="text-sm text-slate-500">{{ $slot->timeRange() }}</p>
-                            </div>
-                            @if ($isToday)
-                                <x-badge tone="ok">Hari ini</x-badge>
-                            @endif
-                        </div>
-                    </div>
-                @empty
-                    <x-empty>Belum ada jadwal. Ketua akan mengatur hari dan jam halaqah.</x-empty>
                 @endforelse
             </section>
         @endunless

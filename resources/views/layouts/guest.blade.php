@@ -39,7 +39,7 @@
                     </li>
                     <li class="flex items-start gap-3">
                         <span class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-gold-300"><x-icon name="check-circle" class="h-4 w-4" /></span>
-                        <span>Absensi sesi harian yang terikat jadwal halaqah.</span>
+                        <span>Absensi sesi harian Senin–Jumat untuk semua santri aktif.</span>
                     </li>
                     <li class="flex items-start gap-3">
                         <span class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-gold-300"><x-icon name="chart" class="h-4 w-4" /></span>

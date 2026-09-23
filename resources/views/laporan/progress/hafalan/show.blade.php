@@ -3,7 +3,7 @@
         <div>
             <p class="ui-section-title">Progress</p>
             <h1 class="font-display text-2xl font-semibold text-teal-950">{{ $santri->user->name }}</h1>
-            <p class="text-sm text-slate-500">NIS {{ $santri->nis }} · {{ $year->name }} · Hafalan</p>
+            <p class="text-sm text-slate-500">NIS {{ $santri->nis }} · Hafalan</p>
         </div>
     </x-slot>
 

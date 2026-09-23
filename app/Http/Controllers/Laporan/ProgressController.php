@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Laporan;
 
 use App\Http\Controllers\Controller;
-use App\Models\AcademicYear;
 use App\Models\SantriProfile;
 use App\Services\SetoranProgress;
 use App\Support\OperationalAccess;
@@ -33,7 +32,7 @@ class ProgressController extends Controller
         return view('laporan.progress.bacaan.index', $this->listData($request, 'bacaan'));
     }
 
-    public function bacaanShow(Request $request, SantriProfile $santri): View|RedirectResponse
+    public function bacaanShow(Request $request, SantriProfile $santri): View
     {
         return $this->detail($request, $santri, 'bacaan');
     }
@@ -43,65 +42,53 @@ class ProgressController extends Controller
         return view('laporan.progress.hafalan.index', $this->listData($request, 'hafalan'));
     }
 
-    public function hafalanShow(Request $request, SantriProfile $santri): View|RedirectResponse
+    public function hafalanShow(Request $request, SantriProfile $santri): View
     {
         return $this->detail($request, $santri, 'hafalan');
     }
 
     /**
-     * @return array{year: ?AcademicYear, rows: list<array<string, mixed>>}
+     * @return array{rows: list<array<string, mixed>>}
      */
     private function listData(Request $request, string $kind): array
     {
-        $year = AcademicYear::query()->aktif()->first();
+        $this->access->assertCanOperate($request->user());
+
+        $santris = $this->access
+            ->activeSantriQuery($request->user())
+            ->get()
+            ->sortBy(fn (SantriProfile $santri) => $santri->user->name)
+            ->values();
+
+        $ids = $santris->pluck('id')->map(fn ($id): int => (int) $id)->all();
+        $map = $kind === 'bacaan'
+            ? $this->progress->bacaanForMany($ids)
+            : $this->progress->hafalanForMany($ids);
+
         $rows = [];
-
-        if ($year) {
-            $members = $this->access
-                ->guidedMemberQuery($request->user())
-                ->where('academic_year_id', $year->id)
-                ->with(['santri.user', 'halaqah'])
-                ->get()
-                ->sortBy(fn ($member) => $member->santri->user->name);
-
-            $ids = $members->pluck('santri_id')->map(fn ($id): int => (int) $id)->all();
-            $map = $kind === 'bacaan'
-                ? $this->progress->bacaanForMany($ids, (int) $year->id)
-                : $this->progress->hafalanForMany($ids, (int) $year->id);
-
-            foreach ($members as $member) {
-                $rows[] = [
-                    'santri' => $member->santri,
-                    'halaqah' => $member->halaqah,
-                    'data' => $map[(int) $member->santri_id],
-                ];
-            }
+        foreach ($santris as $santri) {
+            $rows[] = [
+                'santri' => $santri,
+                'data' => $map[(int) $santri->id],
+            ];
         }
 
         return [
-            'year' => $year,
             'rows' => $rows,
         ];
     }
 
-    private function detail(Request $request, SantriProfile $santri, string $kind): View|RedirectResponse
+    private function detail(Request $request, SantriProfile $santri, string $kind): View
     {
         $this->access->assertSantri($request->user(), $santri);
-        $year = AcademicYear::query()->aktif()->first();
-        if (! $year) {
-            return redirect()
-                ->route('laporan.progress.'.$kind.'.index')
-                ->with('status', 'Belum ada tahun ajaran aktif.');
-        }
 
         $santri->load('user');
         $data = $kind === 'bacaan'
-            ? $this->progress->bacaanForSantri((int) $santri->id, (int) $year->id)
-            : $this->progress->hafalanForSantri((int) $santri->id, (int) $year->id);
+            ? $this->progress->bacaanForSantri((int) $santri->id)
+            : $this->progress->hafalanForSantri((int) $santri->id);
 
         return view('laporan.progress.'.$kind.'.show', [
             'santri' => $santri,
-            'year' => $year,
             'data' => $data,
         ]);
     }

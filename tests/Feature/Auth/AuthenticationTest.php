@@ -24,7 +24,8 @@ class AuthenticationTest extends TestCase
             ->assertSee('Taman Pendidikan Al-Qur\'an', false)
             ->assertSee('Masjid Al Ihsan')
             ->assertSee('Pembelajaran Iqro, Alquran dan Hafalan')
-            ->assertSee('Progress 30 juz dihitung dari ayat yang sudah lancar.')
+            ->assertSee('Absensi sesi harian Senin–Jumat untuk semua santri aktif.')
+            ->assertSee('Progress bacaan & hafalan disesuaikan jenis setoran.', false)
             ->assertSee('Barangsiapa menempuh suatu jalan untuk mencari ilmu, maka Allah mudahkan untuknya jalan menuju surga.')
             ->assertSee('(HR. Muslim). Sebuah ruang digital untuk mendukung perjalanan mulia para santri.')
             ->assertSee('images/logo-masjid-al-ihsan.png', false)
@@ -32,6 +33,7 @@ class AuthenticationTest extends TestCase
             ->assertDontSee('Monitoring Hafalan')
             ->assertDontSee('Absensi, setoran, dan jadwal santri')
             ->assertDontSee('Penilaian Lulus / Mengulang untuk Alquran dan Iqro.')
+            ->assertDontSee('Progress 30 juz dihitung dari ayat yang sudah lancar.')
             ->assertDontSee('Progress 30 juz dihitung dari ayat unik yang sudah lancar.')
             ->assertDontSee('Dirancang untuk pesantren dan madrasah');
     }

@@ -1,14 +1,10 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\Ketua\AcademicYearController;
 use App\Http\Controllers\Ketua\FinanceController;
-use App\Http\Controllers\Ketua\HalaqahController;
-use App\Http\Controllers\Ketua\HalaqahMemberController;
 use App\Http\Controllers\Ketua\HolidayController;
 use App\Http\Controllers\Ketua\SantriController;
 use App\Http\Controllers\Ketua\SantriRegistrationController as KetuaSantriRegistrationController;
-use App\Http\Controllers\Ketua\ScheduleController;
 use App\Http\Controllers\Ketua\UstazController;
 use App\Http\Controllers\Laporan\AttendanceRecapController;
 use App\Http\Controllers\Laporan\ProgressController;
@@ -49,13 +45,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     });
 
     Route::middleware('role:'.Role::Ketua)->prefix('ketua')->name('ketua.')->group(function () {
-        Route::get('siapkan', fn () => redirect()->route('ketua.halaqah.create'))->name('setup.create');
-
-        Route::get('tahun-ajaran', [AcademicYearController::class, 'index'])->name('academic-years.index');
-        Route::post('tahun-ajaran', [AcademicYearController::class, 'store'])->name('academic-years.store');
-        Route::put('tahun-ajaran/{academicYear}', [AcademicYearController::class, 'update'])->name('academic-years.update');
-        Route::patch('tahun-ajaran/{academicYear}/activate', [AcademicYearController::class, 'activate'])->name('academic-years.activate');
-        Route::delete('tahun-ajaran/{academicYear}', [AcademicYearController::class, 'destroy'])->name('academic-years.destroy');
+        Route::get('siapkan', fn () => redirect()->route('ketua.santri.index'))->name('setup.create');
 
         Route::get('ustaz', [UstazController::class, 'index'])->name('ustaz.index');
         Route::get('ustaz/create', [UstazController::class, 'create'])->name('ustaz.create');
@@ -78,22 +68,6 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('keuangan', [FinanceController::class, 'index'])->name('finance.index');
         Route::post('keuangan', [FinanceController::class, 'store'])->name('finance.store');
         Route::put('keuangan/spp', [FinanceController::class, 'updateSppAmount'])->name('finance.spp-amount');
-
-        Route::get('kelas', [HalaqahController::class, 'index'])->name('halaqah.index');
-        Route::get('kelas/create', [HalaqahController::class, 'create'])->name('halaqah.create');
-        Route::post('kelas', [HalaqahController::class, 'store'])->name('halaqah.store');
-        Route::get('kelas/{halaqah}', [HalaqahController::class, 'show'])->name('halaqah.show');
-        Route::get('kelas/{halaqah}/edit', [HalaqahController::class, 'edit'])->name('halaqah.edit');
-        Route::put('kelas/{halaqah}', [HalaqahController::class, 'update'])->name('halaqah.update');
-        Route::patch('kelas/{halaqah}/toggle', [HalaqahController::class, 'toggle'])->name('halaqah.toggle');
-
-        Route::post('kelas/{halaqah}/anggota', [HalaqahMemberController::class, 'store'])->name('halaqah.members.store');
-        Route::post('kelas/{halaqah}/anggota/{member}/mutasi', [HalaqahMemberController::class, 'mutate'])->name('halaqah.members.mutate');
-        Route::delete('kelas/{halaqah}/anggota/{member}', [HalaqahMemberController::class, 'destroy'])->name('halaqah.members.destroy');
-
-        Route::post('kelas/{halaqah}/jadwal', [ScheduleController::class, 'store'])->name('halaqah.schedules.store');
-        Route::put('kelas/{halaqah}/jadwal/{schedule}', [ScheduleController::class, 'update'])->name('halaqah.schedules.update');
-        Route::delete('kelas/{halaqah}/jadwal/{schedule}', [ScheduleController::class, 'destroy'])->name('halaqah.schedules.destroy');
     });
 
     Route::middleware('role:'.Role::Ketua.'|'.Role::KetuaPengajar)->prefix('ketua')->name('ketua.')->group(function () {

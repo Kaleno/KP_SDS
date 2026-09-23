@@ -22,7 +22,7 @@ enum AttendanceStatus: string
     public function hint(): string
     {
         return match ($this) {
-            self::Hadir => 'Hadir di halaqah',
+            self::Hadir => 'Hadir di sesi hari ini',
             self::Izin => 'Tidak hadir dengan izin',
             self::Sakit => 'Tidak hadir karena sakit',
             self::Alfa => 'Tidak hadir tanpa izin',

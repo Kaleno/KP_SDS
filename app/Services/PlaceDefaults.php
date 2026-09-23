@@ -2,30 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\AcademicYear;
-
+/**
+ * Legacy helper from the kelas / tahun ajaran model.
+ * Kept as a no-op stub so leftover callers do not fatal while routes are retired.
+ */
 class PlaceDefaults
 {
-    public function activeYear(): AcademicYear
+    public function activeYear(): never
     {
-        $year = AcademicYear::query()->aktif()->first();
-        if ($year) {
-            return $year;
-        }
-
-        $start = now()->month >= 7
-            ? now()->copy()->month(7)->startOfMonth()
-            : now()->copy()->subYear()->month(7)->startOfMonth();
-        $end = $start->copy()->addYear()->subDay();
-
-        $year = AcademicYear::query()->create([
-            'name' => $start->year.'/'.$end->year,
-            'start_date' => $start->toDateString(),
-            'end_date' => $end->toDateString(),
-            'is_active' => false,
-        ]);
-        $year->markAsActive();
-
-        return $year->fresh();
+        throw new \RuntimeException('Tahun ajaran sudah dihapus dari operasi flat.');
     }
 }

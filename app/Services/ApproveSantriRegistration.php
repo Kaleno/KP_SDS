@@ -14,8 +14,6 @@ use Illuminate\Support\Facades\Storage;
 
 class ApproveSantriRegistration
 {
-    public function __construct(private HalaqahMembershipService $memberships) {}
-
     /**
      * @param  array{username: string, password: string, nis: string}  $credentials
      */
@@ -51,8 +49,6 @@ class ApproveSantriRegistration
                 'birth_date' => $registration->birth_date,
                 'status' => SantriStatus::Aktif,
             ]);
-
-            $this->memberships->syncSantriAcrossActiveClasses($santri);
 
             $registration->update([
                 'status' => RegistrationStatus::Approved,

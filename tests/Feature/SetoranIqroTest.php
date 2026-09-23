@@ -6,12 +6,8 @@ use App\Enums\Gender;
 use App\Enums\SantriStatus;
 use App\Enums\SantriTrack;
 use App\Enums\SetoranStatus;
-use App\Models\AcademicYear;
 use App\Models\HafalanSetoran;
-use App\Models\Halaqah;
-use App\Models\HalaqahMember;
 use App\Models\SantriProfile;
-use App\Models\Schedule;
 use App\Models\User;
 use App\Support\Role;
 use Database\Seeders\RoleSeeder;
@@ -26,6 +22,7 @@ class SetoranIqroTest extends TestCase
     {
         parent::setUp();
         $this->seed(RoleSeeder::class);
+        $this->travelTo('2026-09-23 10:00:00');
     }
 
     public function test_ketua_can_store_iqro_setoran_without_surah(): void
@@ -66,9 +63,7 @@ class SetoranIqroTest extends TestCase
 
         $setoran = HafalanSetoran::query()->create([
             'santri_id' => $fx['santri']->id,
-            'halaqah_id' => $fx['halaqah']->id,
             'ustaz_user_id' => $fx['ketua']->id,
-            'academic_year_id' => $fx['halaqah']->academic_year_id,
             'activity_type' => 'ngaji',
             'category' => 'bacaan',
             'subtype' => 'iqro',
@@ -96,25 +91,12 @@ class SetoranIqroTest extends TestCase
     }
 
     /**
-     * @return array{ketua: User, halaqah: Halaqah, santri: SantriProfile}
+     * @return array{ketua: User, santri: SantriProfile}
      */
     private function iqroFixture(): array
     {
         $ketua = User::factory()->create(['username' => 'ketua']);
         $ketua->assignRole(Role::Ketua);
-
-        $year = AcademicYear::query()->create([
-            'name' => '2026/2027',
-            'start_date' => '2026-07-01',
-            'end_date' => '2027-06-30',
-            'is_active' => true,
-        ]);
-        $halaqah = Halaqah::query()->create([
-            'academic_year_id' => $year->id,
-            'ustaz_user_id' => $ketua->id,
-            'name' => 'Halaqah Iqro',
-            'is_active' => true,
-        ]);
 
         $user = User::factory()->create([
             'name' => 'Siti Aisyah',
@@ -132,21 +114,6 @@ class SetoranIqroTest extends TestCase
             'status' => SantriStatus::Aktif,
         ]);
 
-        HalaqahMember::query()->create([
-            'halaqah_id' => $halaqah->id,
-            'santri_id' => $santri->id,
-            'academic_year_id' => $year->id,
-            'started_at' => '2026-07-01',
-        ]);
-
-        Schedule::query()->create([
-            'halaqah_id' => $halaqah->id,
-            'day_of_week' => now()->isoWeekday(),
-            'start_time' => '07:00:00',
-            'end_time' => '08:30:00',
-            'is_active' => true,
-        ]);
-
-        return compact('ketua', 'halaqah', 'santri');
+        return compact('ketua', 'santri');
     }
 }

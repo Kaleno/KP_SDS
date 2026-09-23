@@ -5,10 +5,8 @@ namespace Tests\Feature;
 use App\Enums\Gender;
 use App\Enums\SantriStatus;
 use App\Enums\SetoranStatus;
-use App\Models\AcademicYear;
+use App\Enums\SetoranSubtype;
 use App\Models\HafalanSetoran;
-use App\Models\Halaqah;
-use App\Models\HalaqahMember;
 use App\Models\SantriProfile;
 use App\Models\User;
 use App\Services\HafalanProgress;
@@ -36,7 +34,7 @@ class HafalanProgressTest extends TestCase
 
         $this->storeSetoran($fx, $fx['santri'], 1, 1, 7, SetoranStatus::Lulus);
 
-        $first = $service->forSantri($fx['santri'], $fx['year']);
+        $first = $service->forSantri($fx['santri'], SetoranSubtype::Alquran);
         $this->assertSame(7, $first->uniqueAyahCount);
         $this->assertSame(7, $first->juz(1)->lancarCount);
         $this->assertSame(4.73, $first->juz(1)->percent);
@@ -46,13 +44,13 @@ class HafalanProgressTest extends TestCase
         $this->assertSame(0, $first->completedJuzCount());
 
         $this->storeSetoran($fx, $fx['santri'], 1, 1, 7, SetoranStatus::Lulus, now()->addDay()->toDateString());
-        $second = $service->forSantri($fx['santri'], $fx['year']);
+        $second = $service->forSantri($fx['santri'], SetoranSubtype::Alquran);
         $this->assertSame(7, $second->uniqueAyahCount);
         $this->assertSame($first->totalPercent, $second->totalPercent);
         $this->assertSame($first->juz(1)->percent, $second->juz(1)->percent);
 
         $this->storeSetoran($fx, $fx['santri'], 2, 1, 5, SetoranStatus::Mengulang);
-        $third = $service->forSantri($fx['santri'], $fx['year']);
+        $third = $service->forSantri($fx['santri'], SetoranSubtype::Alquran);
         $this->assertSame(7, $third->uniqueAyahCount);
         $this->assertSame($first->totalPercent, $third->totalPercent);
     }
@@ -65,42 +63,24 @@ class HafalanProgressTest extends TestCase
         $this->storeSetoran($fx, $fx['santri'], 1, 1, 3, SetoranStatus::Lulus);
         $this->storeSetoran($fx, $fx['santri'], 1, 3, 7, SetoranStatus::Lulus, now()->addDay()->toDateString());
 
-        $result = $service->forSantri($fx['santri'], $fx['year']);
+        $result = $service->forSantri($fx['santri'], SetoranSubtype::Alquran);
         $this->assertSame(7, $result->uniqueAyahCount);
         $this->assertSame(7, $result->juz(1)->lancarCount);
     }
 
     /**
-     * @return array{year: AcademicYear, ustaz: User, halaqah: Halaqah, santri: SantriProfile}
+     * @return array{ustaz: User, santri: SantriProfile}
      */
     private function progressFixture(): array
     {
         $ustaz = $this->userWithRole(Role::KetuaPengajar);
-        $year = AcademicYear::query()->create([
-            'name' => '2026/2027',
-            'start_date' => '2026-07-01',
-            'end_date' => '2027-06-30',
-            'is_active' => true,
-        ]);
-        $halaqah = Halaqah::query()->create([
-            'academic_year_id' => $year->id,
-            'ustaz_user_id' => $ustaz->id,
-            'name' => 'Halaqah A',
-            'is_active' => true,
-        ]);
         $santri = $this->makeSantri('2026001', 'Ahmad Fauzi');
-        HalaqahMember::query()->create([
-            'halaqah_id' => $halaqah->id,
-            'santri_id' => $santri->id,
-            'academic_year_id' => $year->id,
-            'started_at' => '2026-07-01',
-        ]);
 
-        return compact('year', 'ustaz', 'halaqah', 'santri');
+        return compact('ustaz', 'santri');
     }
 
     /**
-     * @param  array{year: AcademicYear, ustaz: User, halaqah: Halaqah, santri: SantriProfile}  $fx
+     * @param  array{ustaz: User}  $fx
      */
     private function storeSetoran(
         array $fx,
@@ -113,9 +93,10 @@ class HafalanProgressTest extends TestCase
     ): HafalanSetoran {
         return HafalanSetoran::query()->create([
             'santri_id' => $santri->id,
-            'halaqah_id' => $fx['halaqah']->id,
             'ustaz_user_id' => $fx['ustaz']->id,
-            'academic_year_id' => $fx['year']->id,
+            'activity_type' => 'ngaji',
+            'category' => 'bacaan',
+            'subtype' => SetoranSubtype::Alquran,
             'quran_surah_id' => $surah,
             'setoran_date' => $date ?? now()->toDateString(),
             'ayah_start' => $start,

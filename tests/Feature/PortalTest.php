@@ -6,14 +6,10 @@ use App\Enums\AttendanceStatus;
 use App\Enums\Gender;
 use App\Enums\SantriStatus;
 use App\Enums\SetoranStatus;
-use App\Models\AcademicYear;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Models\HafalanSetoran;
-use App\Models\Halaqah;
-use App\Models\HalaqahMember;
 use App\Models\SantriProfile;
-use App\Models\Schedule;
 use App\Models\User;
 use App\Support\Role;
 use Database\Seeders\QuranSeeder;
@@ -29,6 +25,7 @@ class PortalTest extends TestCase
     {
         parent::setUp();
         $this->seed(RoleSeeder::class);
+        $this->travelTo('2026-09-23 10:00:00');
     }
 
     public function test_santri_sees_same_progress_and_setoran_without_input_form(): void
@@ -45,7 +42,9 @@ class PortalTest extends TestCase
             ->assertSee('4.73%')
             ->assertSee('hanya melihat')
             ->assertDontSee('Input setoran')
-            ->assertDontSee('Simpan setoran');
+            ->assertDontSee('Simpan setoran')
+            ->assertDontSee('Jadwal halaqah')
+            ->assertDontSee('Halaqah Tahfidz');
     }
 
     public function test_santri_cannot_open_ops(): void
@@ -61,11 +60,10 @@ class PortalTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_portal_shows_attendance_and_schedule(): void
+    public function test_portal_shows_attendance_without_kelas_jadwal_framing(): void
     {
         $fx = $this->portalFixture();
         $session = AttendanceSession::query()->create([
-            'schedule_id' => $fx['schedule']->id,
             'session_date' => now()->toDateString(),
             'opened_by_user_id' => $fx['ustaz']->id,
         ]);
@@ -79,10 +77,10 @@ class PortalTest extends TestCase
             ->get(route('portal.home'))
             ->assertOk()
             ->assertSee('Hadir')
-            ->assertSee('Hadir di halaqah')
             ->assertSee('Hari ini')
-            ->assertSee('07:00')
-            ->assertSee('Jadwal halaqah');
+            ->assertDontSee('Jadwal halaqah')
+            ->assertDontSee('07:00')
+            ->assertDontSee('Halaqah Tahfidz');
     }
 
     public function test_portal_explains_ulang_setoran_in_plain_language(): void
@@ -104,57 +102,28 @@ class PortalTest extends TestCase
     }
 
     /**
-     * @return array{ustaz: User, year: AcademicYear, halaqah: Halaqah, schedule: Schedule, santri: list<SantriProfile>}
+     * @return array{ustaz: User, santri: list<SantriProfile>}
      */
     private function portalFixture(): array
     {
         $ustaz = $this->userWithRole(Role::KetuaPengajar, ['username' => 'ustaz1']);
-        $year = AcademicYear::query()->create([
-            'name' => '2026/2027',
-            'start_date' => '2026-07-01',
-            'end_date' => '2027-06-30',
-            'is_active' => true,
-        ]);
-        $halaqah = Halaqah::query()->create([
-            'academic_year_id' => $year->id,
-            'ustaz_user_id' => $ustaz->id,
-            'name' => 'Halaqah Tahfidz A',
-            'is_active' => true,
-        ]);
 
         $santri = [];
         foreach (['2026001' => 'Ahmad Fauzi', '2026002' => 'Hasan Basri', '2026003' => 'Yusuf Maulana'] as $nis => $name) {
-            $profile = $this->makeSantri($nis, $name);
-            HalaqahMember::query()->create([
-                'halaqah_id' => $halaqah->id,
-                'santri_id' => $profile->id,
-                'academic_year_id' => $year->id,
-                'started_at' => '2026-07-01',
-            ]);
-            $santri[] = $profile;
+            $santri[] = $this->makeSantri($nis, $name);
         }
 
-        $schedule = Schedule::query()->create([
-            'halaqah_id' => $halaqah->id,
-            'day_of_week' => now()->isoWeekday(),
-            'start_time' => '07:00:00',
-            'end_time' => '08:30:00',
-            'is_active' => true,
-        ]);
-
-        return compact('ustaz', 'year', 'halaqah', 'schedule', 'santri');
+        return compact('ustaz', 'santri');
     }
 
     /**
-     * @param  array{ustaz: User, year: AcademicYear, halaqah: Halaqah}  $fx
+     * @param  array{ustaz: User}  $fx
      */
     private function storeFatihah(array $fx, SantriProfile $santri, SetoranStatus $status): void
     {
         HafalanSetoran::query()->create([
             'santri_id' => $santri->id,
-            'halaqah_id' => $fx['halaqah']->id,
             'ustaz_user_id' => $fx['ustaz']->id,
-            'academic_year_id' => $fx['year']->id,
             'activity_type' => 'ngaji',
             'category' => 'bacaan',
             'subtype' => 'alquran',

@@ -24,21 +24,12 @@
                     <x-text-input id="date_to" type="date" name="date_to" class="mt-1.5" :value="$to" />
                 </div>
             </div>
-            <div>
-                <x-input-label for="halaqah_id" value="Halaqah" />
-                <select id="halaqah_id" name="halaqah_id" class="mt-1.5 ui-input">
-                    <option value="">Semua halaqah</option>
-                    @foreach ($halaqahList as $halaqah)
-                        <option value="{{ $halaqah->id }}" @selected($selectedHalaqah === $halaqah->id)>{{ $halaqah->name }}</option>
-                    @endforeach
-                </select>
-            </div>
             <button type="submit" class="btn-primary btn-block">Terapkan</button>
         </form>
 
         <div class="ui-card p-5">
-            <p class="text-sm text-slate-500">Rekap kelompok</p>
-            <p class="mt-1 font-display text-3xl font-semibold text-teal-950">{{ $halaqahPercent }}% hadir</p>
+            <p class="text-sm text-slate-500">Rekap semua santri</p>
+            <p class="mt-1 font-display text-3xl font-semibold text-teal-950">{{ $groupPercent }}% hadir</p>
             <p class="mt-1 text-sm text-slate-500">
                 H {{ $totals['hadir'] }} · I {{ $totals['izin'] }} · S {{ $totals['sakit'] }} · A {{ $totals['alfa'] }}
             </p>

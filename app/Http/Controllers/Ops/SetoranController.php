@@ -34,11 +34,10 @@ class SetoranController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $halaqahIds = $this->access->halaqahQuery($user)->aktif()->pluck('id');
+        $this->access->assertCanOperate($user);
 
         $query = HafalanSetoran::query()
-            ->with(['santri.user', 'surah', 'halaqah'])
-            ->whereIn('halaqah_id', $halaqahIds);
+            ->with(['santri.user', 'surah']);
 
         if ($request->filled('quran_surah_id')) {
             $query->where('quran_surah_id', $request->integer('quran_surah_id'));
@@ -80,9 +79,8 @@ class SetoranController extends Controller
             $activePeriod = 'custom';
         }
 
-        $santriOptions = SantriProfile::query()
-            ->with('user')
-            ->whereIn('id', $this->access->guidedMemberQuery($user)->pluck('santri_id'))
+        $santriOptions = $this->access
+            ->activeSantriQuery($user)
             ->get()
             ->sortBy(fn (SantriProfile $santri) => $santri->user->name);
 
@@ -108,28 +106,19 @@ class SetoranController extends Controller
 
     public function create(Request $request): View
     {
+        $this->access->assertCanOperate($request->user());
+
         return view('ops.setoran.create', $this->formData($request->user(), session: $this->resolvedSession($request)));
     }
 
     public function store(StoreSetoranRequest $request): RedirectResponse
     {
+        $this->access->assertCanOperate($request->user());
+
         $validated = $request->safe()->except(['sesi']);
         $session = $this->resolvedSession($request);
-        $memberQuery = $this->access
-            ->guidedMemberQuery($request->user())
-            ->where('santri_id', $validated['santri_id']);
-
-        if ($session) {
-            $memberQuery->where('halaqah_id', $session->schedule->halaqah_id);
-        }
-
-        $member = $memberQuery->with('santri')->first();
-
-        if (! $member) {
-            throw ValidationException::withMessages([
-                'santri_id' => 'Santri tidak ada di halaqah yang boleh Anda isi.',
-            ]);
-        }
+        $santri = SantriProfile::query()->findOrFail($validated['santri_id']);
+        $this->access->assertSantri($request->user(), $santri);
 
         if ($session) {
             $hadir = $this->hadirSantriIds($request->user(), $session);
@@ -148,13 +137,11 @@ class SetoranController extends Controller
 
         HafalanSetoran::query()->create([
             ...$payload,
-            'halaqah_id' => $member->halaqah_id,
-            'academic_year_id' => $member->academic_year_id,
             'ustaz_user_id' => $request->user()->id,
         ]);
 
         if ($subtype === SetoranSubtype::Iqro && isset($payload['iqro_level'])) {
-            $member->santri->update(['iqro_level' => (int) $payload['iqro_level']]);
+            $santri->update(['iqro_level' => (int) $payload['iqro_level']]);
         }
 
         if ($session) {
@@ -168,16 +155,18 @@ class SetoranController extends Controller
 
     public function edit(Request $request, HafalanSetoran $setoran): View
     {
-        $setoran->load(['halaqah', 'santri.user', 'surah']);
-        $this->access->assertHalaqah($request->user(), $setoran->halaqah);
+        $setoran->load(['santri.user', 'surah']);
+        $this->access->assertCanOperate($request->user());
+        $this->access->assertSantri($request->user(), $setoran->santri);
 
         return view('ops.setoran.edit', $this->formData($request->user(), $setoran));
     }
 
     public function update(UpdateSetoranRequest $request, HafalanSetoran $setoran): RedirectResponse
     {
-        $setoran->load(['halaqah', 'santri']);
-        $this->access->assertHalaqah($request->user(), $setoran->halaqah);
+        $setoran->load('santri');
+        $this->access->assertCanOperate($request->user());
+        $this->access->assertSantri($request->user(), $setoran->santri);
 
         $validated = $request->validated();
         $subtype = SetoranSubtype::from($validated['subtype']);
@@ -233,16 +222,15 @@ class SetoranController extends Controller
     private function formData(User $user, ?HafalanSetoran $setoran = null, ?AttendanceSession $session = null): array
     {
         $members = $this->access
-            ->guidedMemberQuery($user)
-            ->with(['santri.user', 'halaqah'])
+            ->activeSantriQuery($user)
             ->get()
-            ->unique('santri_id')
-            ->sortBy(fn ($member) => $member->santri->user->name);
+            ->sortBy(fn (SantriProfile $santri) => $santri->user->name)
+            ->values();
 
         if ($session) {
             $hadir = $this->hadirSantriIds($user, $session);
             $members = $members
-                ->filter(fn ($member) => $hadir->contains((int) $member->santri_id))
+                ->filter(fn (SantriProfile $santri) => $hadir->contains((int) $santri->id))
                 ->values();
         }
 
@@ -256,7 +244,7 @@ class SetoranController extends Controller
             ? $allSurahs->whereBetween('id', [(int) $juz30->start_surah_id, (int) $juz30->end_surah_id])->values()
             : collect();
 
-        $santriIds = $members->pluck('santri_id');
+        $santriIds = $members->pluck('id');
 
         return [
             'members' => $members,
@@ -455,10 +443,8 @@ class SetoranController extends Controller
             return null;
         }
 
-        $session = AttendanceSession::query()
-            ->with('schedule.halaqah')
-            ->findOrFail($request->integer('sesi'));
-        $this->access->assertHalaqah($request->user(), $session->schedule->halaqah);
+        $session = AttendanceSession::query()->findOrFail($request->integer('sesi'));
+        $this->access->assertCanOperate($request->user());
 
         return $session;
     }
@@ -472,11 +458,11 @@ class SetoranController extends Controller
             ->where('status', AttendanceStatus::Hadir)
             ->pluck('santri_id');
 
-        $allowed = $this->access->guidedMemberQuery($user)->pluck('santri_id');
+        $allowed = collect($this->access->activeSantriIds($user));
 
         return $hadirIds
             ->map(fn ($id): int => (int) $id)
-            ->intersect($allowed->map(fn ($id): int => (int) $id))
+            ->intersect($allowed)
             ->values();
     }
 }

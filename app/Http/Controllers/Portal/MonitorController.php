@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
-use App\Models\AcademicYear;
 use App\Services\SantriMonitor;
 use App\Support\Role;
 use Illuminate\Http\Request;
@@ -23,8 +22,6 @@ class MonitorController extends Controller
         $santri = $user->santriProfile;
         abort_unless($santri, 404);
 
-        $year = AcademicYear::query()->aktif()->first();
-
-        return view('portal.home', $this->monitor->for($santri, $year));
+        return view('portal.home', $this->monitor->for($santri));
     }
 }

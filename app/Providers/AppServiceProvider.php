@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Models\Halaqah;
 use App\Models\SantriProfile;
 use App\Models\User;
 use App\Services\HafalanProgress;
@@ -31,7 +30,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage-master', fn (User $user) => $user->hasRole(Role::Ketua));
         Gate::define('manage-holidays', fn (User $user) => $user->hasAnyRole([Role::Ketua, Role::KetuaPengajar]));
         Gate::define('operate-daily', fn (User $user) => app(OperationalAccess::class)->canOperateDaily($user));
-        Gate::define('operate-halaqah', fn (User $user, Halaqah $halaqah) => app(OperationalAccess::class)->canOperateHalaqah($user, $halaqah));
         Gate::define('monitor-santri', fn (User $user, SantriProfile $santri) => app(PortalAccess::class)->canMonitor($user, $santri));
     }
 }

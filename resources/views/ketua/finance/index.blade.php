@@ -3,7 +3,7 @@
         <div>
             <p class="ui-section-title">Keuangan</p>
             <h1 class="font-display text-2xl font-semibold text-teal-950">Kas DKM</h1>
-            <p class="text-sm text-slate-500">Pemasukan SPP & pengeluaran masjid</p>
+            <p class="text-sm text-slate-500">Hanya catatan pemasukan & pengeluaran kas DKM. Pembayaran SPP dicatat di menu SPP dan tidak masuk otomatis ke sini — setoran ke kas dicatat manual saat uang diserahkan.</p>
         </div>
     </x-slot>
 
@@ -48,7 +48,8 @@
 
         <form method="POST" action="{{ route('ketua.finance.store') }}" class="ui-card p-5 grid gap-4">
             @csrf
-            <p class="font-semibold text-teal-950">Catat manual</p>
+            <p class="font-semibold text-teal-950">Catat pemasukan / pengeluaran</p>
+            <p class="text-sm text-slate-500">Misalnya setoran SPP dari ketua pengajar, infak, atau biaya operasional.</p>
             <div>
                 <x-input-label for="type" value="Jenis" />
                 <select id="type" name="type" class="ui-select mt-1.5" required>
@@ -67,7 +68,7 @@
             </div>
             <div>
                 <x-input-label for="category" value="Kategori" />
-                <x-text-input id="category" name="category" class="mt-1.5" :value="old('category')" placeholder="Infak, listrik, AT" />
+                <x-text-input id="category" name="category" class="mt-1.5" :value="old('category')" placeholder="Setoran SPP, infak, listrik" />
             </div>
             <div>
                 <x-input-label for="note" value="Catatan" />

@@ -8,15 +8,11 @@ use App\Enums\Gender;
 use App\Enums\SantriStatus;
 use App\Enums\SantriTrack;
 use App\Enums\SetoranStatus;
-use App\Models\AcademicYear;
 use App\Models\AttendanceSession;
 use App\Models\HafalanSetoran;
-use App\Models\Halaqah;
-use App\Models\HalaqahMember;
 use App\Models\QuranJuz;
 use App\Models\QuranSurah;
 use App\Models\SantriProfile;
-use App\Models\Schedule;
 use App\Models\User;
 use App\Support\Role;
 use Carbon\Carbon;
@@ -32,6 +28,7 @@ class SetoranTypesTest extends TestCase
     {
         parent::setUp();
         $this->seed(RoleSeeder::class);
+        $this->travelTo('2026-09-23 10:00:00');
     }
 
     public function test_teacher_can_store_bacaan_iqro_even_for_alquran_track(): void
@@ -211,9 +208,7 @@ class SetoranTypesTest extends TestCase
 
         HafalanSetoran::query()->create([
             'santri_id' => $fx['santri']->id,
-            'halaqah_id' => $fx['halaqah']->id,
             'ustaz_user_id' => $fx['ustaz']->id,
-            'academic_year_id' => $fx['halaqah']->academic_year_id,
             'activity_type' => 'ngaji',
             'category' => 'bacaan',
             'subtype' => 'iqro',
@@ -225,9 +220,7 @@ class SetoranTypesTest extends TestCase
 
         HafalanSetoran::query()->create([
             'santri_id' => $fx['santri']->id,
-            'halaqah_id' => $fx['halaqah']->id,
             'ustaz_user_id' => $fx['ustaz']->id,
-            'academic_year_id' => $fx['halaqah']->academic_year_id,
             'activity_type' => 'ngaji',
             'category' => 'bacaan',
             'subtype' => 'alquran',
@@ -261,9 +254,7 @@ class SetoranTypesTest extends TestCase
 
         HafalanSetoran::query()->create([
             'santri_id' => $fx['santri']->id,
-            'halaqah_id' => $fx['halaqah']->id,
             'ustaz_user_id' => $fx['ustaz']->id,
-            'academic_year_id' => $fx['halaqah']->academic_year_id,
             'activity_type' => 'hafalan',
             'category' => 'hafalan',
             'subtype' => 'juz30',
@@ -340,25 +331,12 @@ class SetoranTypesTest extends TestCase
     }
 
     /**
-     * @return array{ustaz: User, halaqah: Halaqah, santri: SantriProfile}
+     * @return array{ustaz: User, santri: SantriProfile}
      */
     private function fixture(SantriTrack $track): array
     {
         $ustaz = User::factory()->create(['username' => 'ustaz1']);
         $ustaz->assignRole(Role::Pengajar);
-
-        $year = AcademicYear::query()->create([
-            'name' => '2026/2027',
-            'start_date' => '2026-07-01',
-            'end_date' => '2027-06-30',
-            'is_active' => true,
-        ]);
-        $halaqah = Halaqah::query()->create([
-            'academic_year_id' => $year->id,
-            'ustaz_user_id' => $ustaz->id,
-            'name' => 'Halaqah A',
-            'is_active' => true,
-        ]);
 
         $user = User::factory()->create([
             'name' => 'Ahmad Fauzi',
@@ -376,22 +354,7 @@ class SetoranTypesTest extends TestCase
             'status' => SantriStatus::Aktif,
         ]);
 
-        HalaqahMember::query()->create([
-            'halaqah_id' => $halaqah->id,
-            'santri_id' => $santri->id,
-            'academic_year_id' => $year->id,
-            'started_at' => '2026-07-01',
-        ]);
-
-        Schedule::query()->create([
-            'halaqah_id' => $halaqah->id,
-            'day_of_week' => now()->isoWeekday(),
-            'start_time' => '07:00:00',
-            'end_time' => '08:30:00',
-            'is_active' => true,
-        ]);
-
-        return compact('ustaz', 'halaqah', 'santri');
+        return compact('ustaz', 'santri');
     }
 
     private function seedSurah(int $id, string $name, int $ayahCount): void

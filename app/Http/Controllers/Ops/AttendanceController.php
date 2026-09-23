@@ -10,7 +10,6 @@ use App\Services\AttendanceSessionService;
 use App\Services\OperationalCalendar;
 use App\Support\DateLabel;
 use App\Support\OperationalAccess;
-use App\Support\Role;
 use App\Support\WeekDay;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,18 +26,14 @@ class AttendanceController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $halaqahIds = $this->access->halaqahQuery($user)->aktif()->pluck('id');
+        $this->access->assertCanOperate($user);
+
         $today = now();
         $day = $today->isoWeekday();
         $isOffDay = $this->calendar->isOffDay($today);
-
-        $todaySlots = $isOffDay
-            ? collect()
-            : $this->sessions->ensureForDate($user, $halaqahIds, $today);
+        $todaySession = $isOffDay ? null : $this->sessions->ensureForDate($user, $today);
 
         $recent = AttendanceSession::query()
-            ->with(['schedule.halaqah.ustaz'])
-            ->whereHas('schedule', fn ($query) => $query->whereIn('halaqah_id', $halaqahIds))
             ->whereDate('session_date', '<', $today->toDateString())
             ->orderByDesc('session_date')
             ->orderByDesc('id')
@@ -46,22 +41,19 @@ class AttendanceController extends Controller
             ->get();
 
         return view('ops.attendance.index', [
-            'todaySlots' => $todaySlots,
+            'todaySession' => $todaySession,
             'recent' => $recent,
             'todayDateLabel' => DateLabel::long($today),
             'dayLabel' => WeekDay::label($day),
             'isOffDay' => $isOffDay,
             'offDayMessage' => $isOffDay ? $this->calendar->offDayMessage($today) : null,
-            'hasAssignedHalaqah' => $halaqahIds->isNotEmpty(),
-            'showUstazOnSlots' => $todaySlots->count() > 1
-                && $user->hasAnyRole([Role::Ketua, Role::KetuaPengajar]),
+            'hasActiveSantri' => $this->access->activeSantriQuery()->exists(),
         ]);
     }
 
     public function show(Request $request, AttendanceSession $attendanceSession): View
     {
-        $attendanceSession->load(['schedule.halaqah.ustaz']);
-        $this->access->assertHalaqah($request->user(), $attendanceSession->schedule->halaqah);
+        $this->access->assertCanOperate($request->user());
         $this->sessions->syncMembers($attendanceSession);
         $attendanceSession->load(['attendances.santri.user']);
 
@@ -73,8 +65,7 @@ class AttendanceController extends Controller
 
     public function update(UpdateAttendanceRequest $request, AttendanceSession $attendanceSession): RedirectResponse
     {
-        $attendanceSession->load('schedule.halaqah');
-        $this->access->assertHalaqah($request->user(), $attendanceSession->schedule->halaqah);
+        $this->access->assertCanOperate($request->user());
         $this->sessions->save($attendanceSession, $request->validated('rows') ?? []);
 
         $hadir = collect($request->validated('rows') ?? [])

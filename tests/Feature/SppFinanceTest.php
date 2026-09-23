@@ -27,7 +27,7 @@ class SppFinanceTest extends TestCase
         $this->seed(RoleSeeder::class);
     }
 
-    public function test_ketua_pengajar_records_spp_creates_finance_and_clears_tunggakan(): void
+    public function test_ketua_pengajar_records_spp_without_finance_entry_and_clears_tunggakan(): void
     {
         $leader = User::factory()->create();
         $leader->assignRole(Role::KetuaPengajar);
@@ -50,11 +50,10 @@ class SppFinanceTest extends TestCase
             'amount' => app(SppService::class)->monthlyAmount(),
         ]);
 
-        $this->assertDatabaseHas('finance_entries', [
-            'type' => FinanceType::Pemasukan->value,
-            'amount' => app(SppService::class)->monthlyAmount(),
+        $this->assertDatabaseMissing('finance_entries', [
             'spp_payment_id' => SppPayment::query()->first()->id,
         ]);
+        $this->assertSame(0, FinanceEntry::query()->where('source', 'spp')->count());
 
         $this->actingAs($leader)
             ->get(route('ops.spp.index'))
@@ -63,7 +62,7 @@ class SppFinanceTest extends TestCase
             ->assertSee('Semua santri aktif sudah bayar');
     }
 
-    public function test_multi_month_payment_creates_one_row_per_month_and_single_finance_entry(): void
+    public function test_multi_month_payment_creates_one_row_per_month_without_finance_entry(): void
     {
         $leader = User::factory()->create();
         $leader->assignRole(Role::KetuaPengajar);
@@ -73,7 +72,6 @@ class SppFinanceTest extends TestCase
         $from = now()->subMonths(2);
         $to = now()->subMonth();
         $months = 2;
-        $amount = app(SppService::class)->monthlyAmount();
 
         $this->actingAs($leader)->post(route('ops.spp.store'), [
             'santri_id' => $santri->id,
@@ -86,11 +84,28 @@ class SppFinanceTest extends TestCase
         ])->assertRedirect();
 
         $this->assertSame($months, SppPayment::query()->where('santri_id', $santri->id)->count());
-        $this->assertSame(1, FinanceEntry::query()->where('source', 'spp')->count());
-        $this->assertDatabaseHas('finance_entries', [
-            'type' => FinanceType::Pemasukan->value,
-            'amount' => $amount * $months,
-        ]);
+        $this->assertSame(0, FinanceEntry::query()->count());
+        $this->assertSame(
+            1,
+            SppPayment::query()->where('santri_id', $santri->id)->distinct()->count('batch_id'),
+        );
+
+        $this->actingAs($leader)
+            ->get(route('ops.spp.index'))
+            ->assertOk()
+            ->assertSee('Riwayat pembayaran')
+            ->assertSee('Rp '.number_format($months * app(SppService::class)->monthlyAmount(), 0, ',', '.'));
+
+        $otherMonth = now()->month === 1 ? 12 : now()->month - 1;
+        $otherYear = now()->month === 1 ? now()->year - 1 : now()->year;
+
+        $this->actingAs($leader)
+            ->get(route('ops.spp.index', [
+                'year' => $otherYear,
+                'month' => $otherMonth,
+            ]))
+            ->assertOk()
+            ->assertSee('Tidak ada pembayaran.');
     }
 
     public function test_obligation_starts_from_activation_month(): void

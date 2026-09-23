@@ -2,12 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Enums\Gender;
-use App\Enums\SantriStatus;
-use App\Models\AcademicYear;
-use App\Models\Halaqah;
-use App\Models\HalaqahMember;
-use App\Models\SantriProfile;
 use App\Models\User;
 use App\Support\Role;
 use Database\Seeders\RoleSeeder;
@@ -34,26 +28,17 @@ class KetuaMasterTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_ketua_can_create_academic_year_and_keep_single_active(): void
+    public function test_removed_academic_year_routes_return_not_found(): void
     {
         $ketua = $this->userWithRole(Role::Ketua);
 
-        $this->actingAs($ketua)->post(route('ketua.academic-years.store'), [
+        $this->actingAs($ketua)->get('/ketua/academic-years')->assertNotFound();
+        $this->actingAs($ketua)->post('/ketua/academic-years', [
             'name' => '2026/2027',
             'start_date' => '2026-07-01',
             'end_date' => '2027-06-30',
             'is_active' => '1',
-        ])->assertRedirect();
-
-        $this->actingAs($ketua)->post(route('ketua.academic-years.store'), [
-            'name' => '2027/2028',
-            'start_date' => '2027-07-01',
-            'end_date' => '2028-06-30',
-            'is_active' => '1',
-        ])->assertRedirect();
-
-        $this->assertSame(1, AcademicYear::query()->where('is_active', true)->count());
-        $this->assertTrue(AcademicYear::query()->where('name', '2027/2028')->first()->is_active);
+        ])->assertNotFound();
     }
 
     public function test_ketua_can_create_ketua_pengajar_and_pengajar(): void
@@ -84,60 +69,6 @@ class KetuaMasterTest extends TestCase
         $this->assertTrue(User::query()->where('username', 'pjr1')->first()->hasRole(Role::Pengajar));
     }
 
-    public function test_santri_can_join_two_active_kelas(): void
-    {
-        $ketua = $this->userWithRole(Role::Ketua);
-        $year = $this->makeYear();
-        $ustaz = $this->userWithRole(Role::KetuaPengajar);
-        $santri = $this->makeSantri('2026001', 'Ahmad');
-        $first = $this->makeHalaqah($year, $ustaz, 'Kelas A');
-        $second = $this->makeHalaqah($year, $ustaz, 'Kelas B');
-
-        $this->actingAs($ketua)->post(route('ketua.halaqah.members.store', $first), [
-            'santri_id' => $santri->id,
-            'started_at' => '2026-07-01',
-        ])->assertRedirect();
-
-        $this->actingAs($ketua)->post(route('ketua.halaqah.members.store', $second), [
-            'santri_id' => $santri->id,
-            'started_at' => '2026-07-02',
-        ])->assertRedirect();
-
-        $this->assertSame(2, HalaqahMember::query()->whereNull('ended_at')->count());
-    }
-
-    public function test_mutation_moves_santri_to_another_halaqah(): void
-    {
-        $ketua = $this->userWithRole(Role::Ketua);
-        $year = $this->makeYear();
-        $ustaz = $this->userWithRole(Role::KetuaPengajar);
-        $santri = $this->makeSantri('2026001', 'Ahmad');
-        $first = $this->makeHalaqah($year, $ustaz, 'Halaqah A');
-        $second = $this->makeHalaqah($year, $ustaz, 'Halaqah B');
-
-        $this->actingAs($ketua)->post(route('ketua.halaqah.members.store', $first), [
-            'santri_id' => $santri->id,
-            'started_at' => '2026-07-01',
-        ]);
-
-        $member = HalaqahMember::query()->where('halaqah_id', $first->id)->first();
-
-        $this->actingAs($ketua)->post(route('ketua.halaqah.members.mutate', [$first, $member]), [
-            'target_halaqah_id' => $second->id,
-            'moved_at' => '2026-08-01',
-            'mutation_note' => 'Pindah kelompok',
-        ])->assertRedirect(route('ketua.halaqah.edit', $second));
-
-        $this->assertNotNull($member->fresh()->ended_at);
-        $this->assertTrue(
-            HalaqahMember::query()
-                ->where('halaqah_id', $second->id)
-                ->where('santri_id', $santri->id)
-                ->whereNull('ended_at')
-                ->exists()
-        );
-    }
-
     public function test_guest_is_redirected_from_setup_wizard(): void
     {
         $this->get(route('ketua.setup.create'))
@@ -153,51 +84,20 @@ class KetuaMasterTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_setup_wizard_redirects_to_santri_index(): void
+    {
+        $ketua = $this->userWithRole(Role::Ketua);
+
+        $this->actingAs($ketua)
+            ->get(route('ketua.setup.create'))
+            ->assertRedirect(route('ketua.santri.index'));
+    }
+
     private function userWithRole(string $role, array $attrs = []): User
     {
         $user = User::factory()->create($attrs);
         $user->assignRole($role);
 
         return $user;
-    }
-
-    private function makeYear(): AcademicYear
-    {
-        $year = AcademicYear::query()->create([
-            'name' => '2026/2027',
-            'start_date' => '2026-07-01',
-            'end_date' => '2027-06-30',
-            'is_active' => false,
-        ]);
-        $year->markAsActive();
-
-        return $year;
-    }
-
-    private function makeSantri(string $nis, string $name): SantriProfile
-    {
-        $user = User::factory()->create([
-            'name' => $name,
-            'username' => $nis,
-            'email' => $nis.'@santri.test',
-        ]);
-        $user->assignRole(Role::Santri);
-
-        return SantriProfile::query()->create([
-            'user_id' => $user->id,
-            'nis' => $nis,
-            'gender' => Gender::LakiLaki,
-            'status' => SantriStatus::Aktif,
-        ]);
-    }
-
-    private function makeHalaqah(AcademicYear $year, User $ustaz, string $name): Halaqah
-    {
-        return Halaqah::query()->create([
-            'academic_year_id' => $year->id,
-            'ustaz_user_id' => $ustaz->id,
-            'name' => $name,
-            'is_active' => true,
-        ]);
     }
 }

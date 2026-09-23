@@ -6,15 +6,11 @@ use App\Enums\AttendanceStatus;
 use App\Enums\Gender;
 use App\Enums\SantriStatus;
 use App\Enums\SetoranStatus;
-use App\Models\AcademicYear;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Models\HafalanSetoran;
-use App\Models\Halaqah;
-use App\Models\HalaqahMember;
 use App\Models\QuranSurah;
 use App\Models\SantriProfile;
-use App\Models\Schedule;
 use App\Models\User;
 use App\Support\Role;
 use Database\Seeders\RoleSeeder;
@@ -29,6 +25,7 @@ class DashboardTest extends TestCase
     {
         parent::setUp();
         $this->seed(RoleSeeder::class);
+        $this->travelTo('2026-09-23 10:00:00');
     }
 
     public function test_unauthenticated_request_redirects_to_login(): void
@@ -85,7 +82,7 @@ class DashboardTest extends TestCase
         $html = $this->actingAs($fx['ketua'])
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Jadwal hari ini')
+            ->assertSee('Absensi hari ini')
             ->assertSee('Sesi terbuka')
             ->assertSee('Isi absensi')
             ->assertSee('Perlu perhatian')
@@ -94,28 +91,30 @@ class DashboardTest extends TestCase
             ->assertSee('Al-Fatihah')
             ->assertSee('Belum setor hari ini')
             ->assertSee('Setoran perlu diulang')
-            ->assertSee('Kelas aktif')
-            ->assertSee('Halaqah Tahfidz A')
+            ->assertSee('Santri aktif')
             ->assertSee('Setoran hari ini')
             ->assertSee('Alfa hari ini')
             ->assertSee('Sesi hari ini')
-            ->assertSee('2/3 anggota sudah setor')
+            ->assertSee('2/3 sudah setor')
             ->assertSee('Ringkasan SPP')
             ->assertSee('Minggu ini')
             ->assertSee('Rekap minggu ini')
+            ->assertDontSee('Kelas aktif')
+            ->assertDontSee('Halaqah Tahfidz A')
+            ->assertDontSee('Jadwal hari ini')
             ->assertDontSee('Kehadiran hari ini')
             ->assertDontSee('Setoran terkini')
             ->assertDontSee('Alfa minggu ini')
             ->assertDontSee('Input setoran')
-            ->assertDontSee('Absensi hari ini')
             ->assertDontSee('Buka sesi')
             ->assertDontSee('Belum dibuka')
             ->assertDontSee('Kelas belum siap dipakai')
+            ->assertDontSee('Buat kelas')
             ->assertDontSee('07:00')
             ->assertDontSee('Masjid Utama')
             ->getContent();
 
-        $slotPos = strpos($html, 'Jadwal hari ini');
+        $slotPos = strpos($html, 'Absensi hari ini');
         $attentionPos = strpos($html, 'Perlu perhatian');
         $sppPos = strpos($html, 'Ringkasan SPP');
         $weekPos = strpos($html, 'Minggu ini');
@@ -129,7 +128,7 @@ class DashboardTest extends TestCase
         $this->assertTrue($sppPos < $weekPos);
     }
 
-    public function test_ustaz_dashboard_shows_their_halaqah_activity(): void
+    public function test_ustaz_dashboard_shows_shared_ops_activity(): void
     {
         $fx = $this->opsFixture();
         $this->seedTodayActivity($fx);
@@ -137,38 +136,40 @@ class DashboardTest extends TestCase
         $this->actingAs($fx['ustaz'])
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Jadwal hari ini')
+            ->assertSee('Absensi hari ini')
             ->assertSee('Perlu perhatian')
-            ->assertSee('Anggota aktif')
+            ->assertSee('Santri aktif')
             ->assertSee('Sesi hari ini')
             ->assertSee('Setoran hari ini')
             ->assertSee('Alfa hari ini')
-            ->assertSee('Kelas Anda')
-            ->assertSee('Halaqah Tahfidz A')
             ->assertSee('Yusuf Maulana')
             ->assertSee('Al-Fatihah')
             ->assertSee('Hasan Basri')
             ->assertDontSee('Ringkasan SPP')
-            ->assertDontSee('Setoran terkini')
-            ->assertDontSee('Kehadiran hari ini')
+            ->assertDontSee('Kelas Anda')
+            ->assertDontSee('Halaqah Tahfidz A')
+            ->assertDontSee('Anggota aktif')
             ->assertDontSee('07:00')
             ->assertDontSee('Masjid Utama');
     }
 
-    public function test_ketua_without_halaqah_sees_setup_banner(): void
+    public function test_ketua_without_santri_sees_readiness_banner_without_buat_kelas(): void
     {
         $ketua = $this->userWithRole(Role::Ketua);
 
         $this->actingAs($ketua)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Kelas belum siap dipakai')
+            ->assertSee('Belum siap dipakai')
             ->assertSee('Akun pengajar')
-            ->assertSee('Buat kelas')
+            ->assertSee('Santri aktif')
+            ->assertSee('Tambah santri')
+            ->assertDontSee('Buat kelas')
+            ->assertDontSee('Kelas belum siap dipakai')
             ->assertSee('Minggu ini');
     }
 
-    public function test_other_ustaz_does_not_see_foreign_halaqah_on_dashboard(): void
+    public function test_another_pengajar_sees_same_ops_activity_on_dashboard(): void
     {
         $fx = $this->opsFixture();
         $this->seedTodayActivity($fx);
@@ -177,56 +178,30 @@ class DashboardTest extends TestCase
         $this->actingAs($outsider)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertDontSee('Halaqah Tahfidz A')
-            ->assertDontSee('Yusuf Maulana')
-            ->assertDontSee('Al-Fatihah');
+            ->assertSee('Yusuf Maulana')
+            ->assertSee('Al-Fatihah')
+            ->assertSee('Absensi hari ini')
+            ->assertDontSee('Halaqah Tahfidz A');
     }
 
     /**
-     * @return array{ketua: User, ustaz: User, year: AcademicYear, halaqah: Halaqah, schedule: Schedule, santri: list<SantriProfile>}
+     * @return array{ketua: User, ustaz: User, santri: list<SantriProfile>}
      */
     private function opsFixture(): array
     {
         $ketua = $this->userWithRole(Role::Ketua);
         $ustaz = $this->userWithRole(Role::KetuaPengajar, ['username' => 'ustaz1', 'name' => 'Ustaz Ahmad']);
-        $year = AcademicYear::query()->create([
-            'name' => '2026/2027',
-            'start_date' => '2026-07-01',
-            'end_date' => '2027-06-30',
-            'is_active' => true,
-        ]);
-        $halaqah = Halaqah::query()->create([
-            'academic_year_id' => $year->id,
-            'ustaz_user_id' => $ustaz->id,
-            'name' => 'Halaqah Tahfidz A',
-            'is_active' => true,
-        ]);
 
         $santri = [];
         foreach (['2026001' => 'Ahmad Fauzi', '2026002' => 'Hasan Basri', '2026003' => 'Yusuf Maulana'] as $nis => $name) {
-            $profile = $this->makeSantri($nis, $name);
-            HalaqahMember::query()->create([
-                'halaqah_id' => $halaqah->id,
-                'santri_id' => $profile->id,
-                'academic_year_id' => $year->id,
-                'started_at' => '2026-07-01',
-            ]);
-            $santri[] = $profile;
+            $santri[] = $this->makeSantri($nis, $name);
         }
 
-        $schedule = Schedule::query()->create([
-            'halaqah_id' => $halaqah->id,
-            'day_of_week' => now()->isoWeekday(),
-            'start_time' => '07:00:00',
-            'end_time' => '08:30:00',
-            'is_active' => true,
-        ]);
-
-        return compact('ketua', 'ustaz', 'year', 'halaqah', 'schedule', 'santri');
+        return compact('ketua', 'ustaz', 'santri');
     }
 
     /**
-     * @param  array{ustaz: User, year: AcademicYear, halaqah: Halaqah, schedule: Schedule, santri: list<SantriProfile>}  $fx
+     * @param  array{ustaz: User, santri: list<SantriProfile>}  $fx
      */
     private function seedTodayActivity(array $fx): void
     {
@@ -238,7 +213,6 @@ class DashboardTest extends TestCase
         ]);
 
         $session = AttendanceSession::query()->create([
-            'schedule_id' => $fx['schedule']->id,
             'session_date' => now()->toDateString(),
             'opened_by_user_id' => $fx['ustaz']->id,
         ]);
@@ -254,9 +228,10 @@ class DashboardTest extends TestCase
 
         HafalanSetoran::query()->create([
             'santri_id' => $fx['santri'][0]->id,
-            'halaqah_id' => $fx['halaqah']->id,
             'ustaz_user_id' => $fx['ustaz']->id,
-            'academic_year_id' => $fx['year']->id,
+            'activity_type' => 'ngaji',
+            'category' => 'bacaan',
+            'subtype' => 'alquran',
             'quran_surah_id' => 1,
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,
@@ -265,9 +240,10 @@ class DashboardTest extends TestCase
         ]);
         HafalanSetoran::query()->create([
             'santri_id' => $fx['santri'][1]->id,
-            'halaqah_id' => $fx['halaqah']->id,
             'ustaz_user_id' => $fx['ustaz']->id,
-            'academic_year_id' => $fx['year']->id,
+            'activity_type' => 'ngaji',
+            'category' => 'bacaan',
+            'subtype' => 'alquran',
             'quran_surah_id' => 1,
             'setoran_date' => now()->toDateString(),
             'ayah_start' => 1,

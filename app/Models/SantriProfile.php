@@ -61,14 +61,6 @@ class SantriProfile extends Model
     }
 
     /**
-     * @return HasMany<HalaqahMember, $this>
-     */
-    public function memberships(): HasMany
-    {
-        return $this->hasMany(HalaqahMember::class, 'santri_id');
-    }
-
-    /**
      * @return HasMany<HafalanSetoran, $this>
      */
     public function setoran(): HasMany

@@ -2,12 +2,12 @@
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div class="min-w-0">
             <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold-700">Persiapan</p>
-            <h2 class="mt-1 font-display text-2xl font-semibold text-teal-950">Kelas belum siap dipakai</h2>
+            <h2 class="mt-1 font-display text-2xl font-semibold text-teal-950">Belum siap dipakai</h2>
             <p class="mt-2 max-w-xl text-sm text-slate-600">
-                Tambah pengajar dan santri, lalu buat kelas dengan hari dan jam pembelajaran. Santri aktif otomatis ikut.
+                Tambah pengajar dan santri aktif. Absensi berjalan Senin–Jumat untuk semua santri.
             </p>
         </div>
-        <a href="{{ route('ketua.halaqah.create') }}" class="btn-primary min-h-11 shrink-0">Buat kelas</a>
+        <a href="{{ route('ketua.santri.create') }}" class="btn-primary min-h-11 shrink-0">Tambah santri</a>
     </div>
     <ul class="mt-5 grid gap-2 sm:grid-cols-2">
         @foreach ($readiness['checks'] as $check)

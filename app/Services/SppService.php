@@ -2,10 +2,7 @@
 
 namespace App\Services;
 
-use App\Enums\FinanceSource;
-use App\Enums\FinanceType;
 use App\Enums\SantriStatus;
-use App\Models\FinanceEntry;
 use App\Models\SantriProfile;
 use App\Models\SppPayment;
 use App\Models\User;
@@ -13,6 +10,7 @@ use App\Support\AppSettings;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class SppService
@@ -77,15 +75,14 @@ class SppService
         }
 
         $amountPerMonth = $this->monthlyAmount();
-        $total = $amountPerMonth * count($periods);
+        $batchId = (string) Str::uuid();
 
-        $santri->loadMissing('user');
-
-        return DB::transaction(function () use ($santri, $recorder, $periods, $paidAt, $note, $amountPerMonth, $total) {
+        return DB::transaction(function () use ($santri, $recorder, $periods, $paidAt, $note, $amountPerMonth, $batchId) {
             $payments = collect();
 
             foreach ($periods as $period) {
                 $payments->push(SppPayment::query()->create([
+                    'batch_id' => $batchId,
                     'santri_id' => $santri->id,
                     'year' => $period['year'],
                     'month' => $period['month'],
@@ -95,21 +92,6 @@ class SppService
                     'note' => $note,
                 ]));
             }
-
-            /** @var SppPayment $first */
-            $first = $payments->first();
-            $labels = $payments->map(fn (SppPayment $p): string => $p->periodLabel())->implode(', ');
-
-            FinanceEntry::query()->create([
-                'type' => FinanceType::Pemasukan,
-                'source' => FinanceSource::Spp,
-                'amount' => $total,
-                'entry_date' => $paidAt,
-                'category' => 'SPP',
-                'note' => 'SPP '.$labels.' · '.$santri->user->name,
-                'spp_payment_id' => $first->id,
-                'created_by' => $recorder->id,
-            ]);
 
             return $payments;
         });
@@ -255,6 +237,58 @@ class SppService
             'deepArrears' => $deep,
             'overdue' => $overdue,
         ];
+    }
+
+    /**
+     * Payment batches for the SPP ops screen (one row per form submit), filtered by payment date month.
+     *
+     * @return Collection<int, array{paid_at: Carbon, santri: SantriProfile, months: int, total: int, note: ?string, periods: string}>
+     */
+    public function recentPaymentBatches(int $year, int $month, int $limit = 100): Collection
+    {
+        $from = Carbon::create($year, $month, 1)->startOfMonth();
+        $to = $from->copy()->endOfMonth();
+
+        $batches = SppPayment::query()
+            ->selectRaw('batch_id, santri_id, paid_at, SUM(amount) as total, COUNT(*) as months, MAX(note) as note, MAX(id) as latest_id')
+            ->whereDate('paid_at', '>=', $from->toDateString())
+            ->whereDate('paid_at', '<=', $to->toDateString())
+            ->groupBy('batch_id', 'santri_id', 'paid_at')
+            ->orderByDesc('paid_at')
+            ->orderByDesc('latest_id')
+            ->limit($limit)
+            ->get();
+
+        if ($batches->isEmpty()) {
+            return collect();
+        }
+
+        $santris = SantriProfile::query()
+            ->with('user')
+            ->whereIn('id', $batches->pluck('santri_id')->unique())
+            ->get()
+            ->keyBy('id');
+
+        $periodLabels = SppPayment::query()
+            ->whereIn('batch_id', $batches->pluck('batch_id'))
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get(['batch_id', 'year', 'month'])
+            ->groupBy('batch_id')
+            ->map(fn (Collection $rows): string => $rows
+                ->map(fn (SppPayment $row): string => sprintf('%02d/%d', $row->month, $row->year))
+                ->implode(', '));
+
+        return $batches->map(function (SppPayment $batch) use ($santris, $periodLabels): array {
+            return [
+                'paid_at' => Carbon::parse($batch->paid_at)->startOfDay(),
+                'santri' => $santris->get($batch->santri_id),
+                'months' => (int) $batch->months,
+                'total' => (int) $batch->total,
+                'note' => $batch->note,
+                'periods' => $periodLabels->get($batch->batch_id, ''),
+            ];
+        })->values();
     }
 
     /**

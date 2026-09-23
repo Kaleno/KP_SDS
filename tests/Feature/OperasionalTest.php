@@ -6,15 +6,11 @@ use App\Enums\AttendanceStatus;
 use App\Enums\Gender;
 use App\Enums\SantriStatus;
 use App\Enums\SetoranStatus;
-use App\Models\AcademicYear;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Models\HafalanSetoran;
-use App\Models\Halaqah;
-use App\Models\HalaqahMember;
 use App\Models\QuranSurah;
 use App\Models\SantriProfile;
-use App\Models\Schedule;
 use App\Models\User;
 use App\Support\Role;
 use Database\Seeders\RoleSeeder;
@@ -29,6 +25,7 @@ class OperasionalTest extends TestCase
     {
         parent::setUp();
         $this->seed(RoleSeeder::class);
+        $this->travelTo('2026-09-23 10:00:00'); // Wednesday
     }
 
     public function test_ustaz_auto_session_allows_saving_mixed_status(): void
@@ -58,58 +55,48 @@ class OperasionalTest extends TestCase
         $this->assertSame(1, Attendance::query()->where('status', AttendanceStatus::Izin)->count());
     }
 
-    public function test_other_ustaz_cannot_see_session(): void
+    public function test_pengajar_can_absen_all_active_santri(): void
     {
-        $fx = $this->opsFixture();
-        $outsider = $this->userWithRole(Role::Pengajar, ['username' => 'ustaz2']);
+        $fx = $this->opsFixture(Role::Pengajar);
 
-        $this->actingAs($outsider)
+        $this->actingAs($fx['ustaz'])
             ->get(route('ops.attendance.index'))
             ->assertOk()
-            ->assertDontSee('Isi absensi');
+            ->assertSee('Isi absensi')
+            ->assertDontSee('Belum ada kelas yang ditugaskan');
 
-        $session = AttendanceSession::query()->create([
-            'schedule_id' => $fx['schedule']->id,
-            'session_date' => now()->toDateString(),
-            'opened_by_user_id' => $fx['ustaz']->id,
-        ]);
+        $session = AttendanceSession::query()->firstOrFail();
 
-        $this->actingAs($outsider)
+        $this->actingAs($fx['ustaz'])
             ->get(route('ops.attendance.show', $session))
-            ->assertForbidden();
+            ->assertOk()
+            ->assertSee('Ahmad Fauzi')
+            ->assertSee('Hasan Basri')
+            ->assertSee('Yusuf Maulana');
     }
 
-    public function test_ketua_pengajar_can_open_another_pengajar_session(): void
+    public function test_another_pengajar_can_open_and_save_same_day_session(): void
     {
         $fx = $this->opsFixture();
         $other = $this->userWithRole(Role::Pengajar, ['username' => 'pengajar2', 'name' => 'Pengajar Dua']);
-        $otherHalaqah = Halaqah::query()->create([
-            'academic_year_id' => $fx['halaqah']->academic_year_id,
-            'ustaz_user_id' => $other->id,
-            'name' => 'Kelas Pengajar Lain',
-            'is_active' => true,
-        ]);
-        $otherSchedule = Schedule::query()->create([
-            'halaqah_id' => $otherHalaqah->id,
-            'day_of_week' => now()->isoWeekday(),
-            'start_time' => '07:00:00',
-            'end_time' => '08:30:00',
-            'is_active' => true,
-        ]);
-        $session = AttendanceSession::query()->create([
-            'schedule_id' => $otherSchedule->id,
-            'session_date' => now()->toDateString(),
-            'opened_by_user_id' => $other->id,
-        ]);
 
-        $this->actingAs($fx['ustaz'])
-            ->get(route('ops.attendance.index'))
-            ->assertOk()
-            ->assertSee('Isi absensi');
+        $this->actingAs($fx['ustaz'])->get(route('ops.attendance.index'))->assertOk();
+        $session = AttendanceSession::query()->firstOrFail();
 
-        $this->actingAs($fx['ustaz'])
+        $this->actingAs($other)
             ->get(route('ops.attendance.show', $session))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Ahmad Fauzi');
+
+        $this->actingAs($other)
+            ->put(route('ops.attendance.update', $session), [
+                'rows' => [
+                    $fx['santri'][0]->id => ['status' => AttendanceStatus::Hadir->value],
+                    $fx['santri'][1]->id => ['status' => AttendanceStatus::Izin->value],
+                    $fx['santri'][2]->id => ['status' => AttendanceStatus::Alfa->value],
+                ],
+            ])
+            ->assertRedirect(route('ops.setoran.create', ['sesi' => $session->id]));
     }
 
     public function test_attendance_session_page_renders_status_choice_styles(): void
@@ -170,7 +157,7 @@ class OperasionalTest extends TestCase
 
     public function test_setoran_index_today_filter_hides_older_rows(): void
     {
-        $this->travelTo('2026-09-07 08:00:00');
+        $this->travelTo('2026-09-07 08:00:00'); // Monday
 
         $fx = $this->opsFixture();
         $this->seedFatihah();
@@ -314,15 +301,16 @@ class OperasionalTest extends TestCase
             ->assertDontSee('Hasan Basri');
     }
 
-    public function test_other_ustaz_cannot_open_setoran_for_foreign_session(): void
+    public function test_another_pengajar_can_open_setoran_for_shared_session(): void
     {
         $fx = $this->opsFixture();
         $session = $this->saveMixedAttendance($fx);
-        $outsider = $this->userWithRole(Role::Pengajar, ['username' => 'ustaz2']);
+        $other = $this->userWithRole(Role::Pengajar, ['username' => 'ustaz2']);
 
-        $this->actingAs($outsider)
+        $this->actingAs($other)
             ->get(route('ops.setoran.create', ['sesi' => $session->id]))
-            ->assertForbidden();
+            ->assertOk()
+            ->assertSee('Ahmad Fauzi');
     }
 
     public function test_setoran_with_session_rejects_absent_santri(): void
@@ -392,7 +380,7 @@ class OperasionalTest extends TestCase
         $this->assertSame(2, HafalanSetoran::query()->count());
     }
 
-    public function test_ketua_can_open_any_halaqah_session(): void
+    public function test_ketua_can_open_global_day_session(): void
     {
         $fx = $this->opsFixture();
 
@@ -402,6 +390,7 @@ class OperasionalTest extends TestCase
             ->assertSee('Isi absensi');
 
         $this->assertTrue(AttendanceSession::query()->exists());
+        $this->assertSame(1, AttendanceSession::query()->whereDate('session_date', now()->toDateString())->count());
     }
 
     public function test_super_admin_cannot_open_ops_menu(): void
@@ -414,15 +403,13 @@ class OperasionalTest extends TestCase
     }
 
     /**
-     * @param  array{ustaz: User, halaqah: Halaqah}  $fx
+     * @param  array{ustaz: User}  $fx
      */
     private function makeSetoran(array $fx, SantriProfile $santri, SetoranStatus $status, ?string $date = null, int $ayahEnd = 7): HafalanSetoran
     {
         return HafalanSetoran::query()->create([
             'santri_id' => $santri->id,
-            'halaqah_id' => $fx['halaqah']->id,
             'ustaz_user_id' => $fx['ustaz']->id,
-            'academic_year_id' => $fx['halaqah']->academic_year_id,
             'activity_type' => 'ngaji',
             'category' => 'bacaan',
             'subtype' => 'alquran',
@@ -435,7 +422,7 @@ class OperasionalTest extends TestCase
     }
 
     /**
-     * @param  array{ustaz: User, schedule: Schedule, santri: list<SantriProfile>}  $fx
+     * @param  array{ustaz: User, santri: list<SantriProfile>}  $fx
      */
     private function saveMixedAttendance(array $fx): AttendanceSession
     {
@@ -456,46 +443,19 @@ class OperasionalTest extends TestCase
     }
 
     /**
-     * @return array{ketua: User, ustaz: User, halaqah: Halaqah, schedule: Schedule, santri: list<SantriProfile>}
+     * @return array{ketua: User, ustaz: User, santri: list<SantriProfile>}
      */
-    private function opsFixture(): array
+    private function opsFixture(string $ustazRole = Role::KetuaPengajar): array
     {
         $ketua = $this->userWithRole(Role::Ketua);
-        $ustaz = $this->userWithRole(Role::KetuaPengajar, ['username' => 'ustaz1']);
-        $year = AcademicYear::query()->create([
-            'name' => '2026/2027',
-            'start_date' => '2026-07-01',
-            'end_date' => '2027-06-30',
-            'is_active' => true,
-        ]);
-        $halaqah = Halaqah::query()->create([
-            'academic_year_id' => $year->id,
-            'ustaz_user_id' => $ustaz->id,
-            'name' => 'Halaqah Tahfidz A',
-            'is_active' => true,
-        ]);
+        $ustaz = $this->userWithRole($ustazRole, ['username' => 'ustaz1']);
 
         $santri = [];
         foreach (['2026001' => 'Ahmad Fauzi', '2026002' => 'Hasan Basri', '2026003' => 'Yusuf Maulana'] as $nis => $name) {
-            $profile = $this->makeSantri($nis, $name);
-            HalaqahMember::query()->create([
-                'halaqah_id' => $halaqah->id,
-                'santri_id' => $profile->id,
-                'academic_year_id' => $year->id,
-                'started_at' => '2026-07-01',
-            ]);
-            $santri[] = $profile;
+            $santri[] = $this->makeSantri($nis, $name);
         }
 
-        $schedule = Schedule::query()->create([
-            'halaqah_id' => $halaqah->id,
-            'day_of_week' => now()->isoWeekday(),
-            'start_time' => '07:00:00',
-            'end_time' => '08:30:00',
-            'is_active' => true,
-        ]);
-
-        return compact('ketua', 'ustaz', 'halaqah', 'schedule', 'santri');
+        return compact('ketua', 'ustaz', 'santri');
     }
 
     private function seedFatihah(): void

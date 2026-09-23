@@ -10,6 +10,7 @@ use App\Support\OperationalAccess;
 use App\Support\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class SppController extends Controller
@@ -23,11 +24,11 @@ class SppController extends Controller
     {
         $this->assertLeader($request);
 
-        $year = (int) $request->input('year', now()->year);
-        $month = (int) $request->input('month', now()->month);
+        $historyYear = (int) $request->input('year', now()->year);
+        $historyMonth = (int) $request->input('month', now()->month);
         $filter = $request->input('filter', 'bulan_ini');
 
-        $tunggakan = $this->spp->tunggakan($year, $month);
+        $tunggakan = $this->spp->tunggakan();
         if ($filter === 'nunggak') {
             $tunggakan = $tunggakan->filter(
                 fn (SantriProfile $santri): bool => (int) $santri->getAttribute('unpaid_count') > 1
@@ -36,12 +37,13 @@ class SppController extends Controller
 
         return view('ops.spp.index', [
             'tunggakan' => $tunggakan,
-            'year' => $year,
-            'month' => $month,
+            'year' => $historyYear,
+            'month' => $historyMonth,
             'filter' => $filter,
             'amount' => $this->spp->monthlyAmount(),
             'dueDay' => $this->spp->dueDay(),
-            'summary' => $this->spp->summary($year, $month),
+            'summary' => $this->spp->summary(),
+            'history' => $this->spp->recentPaymentBatches($historyYear, $historyMonth),
             'santriOptions' => SantriProfile::query()->aktif()->with('user')->orderBy('nis')->get(),
             'isKetua' => $request->user()->hasRole(Role::Ketua),
         ]);
@@ -61,11 +63,14 @@ class SppController extends Controller
             $request->integer('to_month'),
         );
 
+        $paidAt = $request->string('paid_at')->toString();
+        $paidAtDate = Carbon::parse($paidAt);
+
         $payments = $this->spp->recordPeriods(
             $santri,
             $request->user(),
             $periods,
-            $request->string('paid_at')->toString(),
+            $paidAt,
             $request->input('note'),
         );
 
@@ -74,8 +79,8 @@ class SppController extends Controller
 
         return redirect()
             ->route('ops.spp.index', [
-                'year' => $request->integer('to_year'),
-                'month' => $request->integer('to_month'),
+                'year' => $paidAtDate->year,
+                'month' => $paidAtDate->month,
             ])
             ->with(
                 'status',

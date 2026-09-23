@@ -19,8 +19,8 @@
                     @change="applyContinueProgress()">
                 <option value="">Pilih santri</option>
                 @foreach ($members as $member)
-                    <option value="{{ $member->santri_id }}" @selected(old('santri_id', $members->count() === 1 ? $members->first()->santri_id : null) == $member->santri_id)>
-                        {{ $member->santri->user->name }} — {{ $member->santri->track?->label() }}
+                    <option value="{{ $member->id }}" @selected(old('santri_id', $members->count() === 1 ? $members->first()->id : null) == $member->id)>
+                        {{ $member->user->name }} — {{ $member->track?->label() }}
                     </option>
                 @endforeach
             </select>

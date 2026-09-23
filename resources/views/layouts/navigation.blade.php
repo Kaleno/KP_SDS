@@ -15,11 +15,9 @@
             ['label' => 'SPP', 'route' => 'ops.spp.index', 'match' => 'ops.spp.*', 'icon' => 'cash', 'group' => 'Operasional', 'primary' => false],
             ['label' => 'Progress', 'route' => 'laporan.progress.index', 'match' => 'laporan.progress.*', 'icon' => 'chart', 'group' => 'Laporan', 'primary' => false],
             ['label' => 'Rekap', 'route' => 'laporan.attendance.index', 'match' => 'laporan.attendance.*', 'icon' => 'clipboard', 'group' => 'Laporan', 'primary' => false],
-            ['label' => 'Kelas', 'route' => 'ketua.halaqah.index', 'match' => 'ketua.halaqah.*', 'icon' => 'layers', 'group' => 'Master data', 'primary' => false],
             ['label' => 'Pengajar', 'route' => 'ketua.ustaz.index', 'match' => 'ketua.ustaz.*', 'icon' => 'academic', 'group' => 'Master data', 'primary' => false],
             ['label' => 'Santri', 'route' => 'ketua.santri.index', 'match' => 'ketua.santri.*', 'icon' => 'users', 'group' => 'Master data', 'primary' => false],
             ['label' => 'Daftar', 'route' => 'ketua.registrations.index', 'match' => 'ketua.registrations.*', 'icon' => 'spark', 'group' => 'Master data', 'primary' => false],
-            ['label' => 'Tahun ajaran', 'route' => 'ketua.academic-years.index', 'match' => 'ketua.academic-years.*', 'icon' => 'calendar', 'group' => 'Master data', 'primary' => false],
             ['label' => 'Libur', 'route' => 'ketua.holidays.index', 'match' => 'ketua.holidays.*', 'icon' => 'alert', 'group' => 'Master data', 'primary' => false],
             ['label' => 'Kas', 'route' => 'ketua.finance.index', 'match' => 'ketua.finance.*', 'icon' => 'cash', 'group' => 'Keuangan', 'primary' => false],
         ];

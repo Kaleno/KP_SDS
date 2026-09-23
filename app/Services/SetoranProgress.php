@@ -52,11 +52,11 @@ class SetoranProgress
      * @param  list<int>  $santriIds
      * @return array<int, BacaanRow>
      */
-    public function bacaanForMany(array $santriIds, int $academicYearId): array
+    public function bacaanForMany(array $santriIds): array
     {
-        $juzMap = $this->juzProgress->forMany($santriIds, $academicYearId, SetoranSubtype::Alquran);
-        $lastAlquran = $this->latestBySubtype($santriIds, $academicYearId, SetoranSubtype::Alquran, onlyLulus: true);
-        $lastIqro = $this->latestBySubtype($santriIds, $academicYearId, SetoranSubtype::Iqro, onlyLulus: false);
+        $juzMap = $this->juzProgress->forMany($santriIds, SetoranSubtype::Alquran);
+        $lastAlquran = $this->latestBySubtype($santriIds, SetoranSubtype::Alquran, onlyLulus: true);
+        $lastIqro = $this->latestBySubtype($santriIds, SetoranSubtype::Iqro, onlyLulus: false);
 
         $out = [];
         foreach ($santriIds as $id) {
@@ -80,11 +80,11 @@ class SetoranProgress
      * @param  list<int>  $santriIds
      * @return array<int, HafalanRow>
      */
-    public function hafalanForMany(array $santriIds, int $academicYearId): array
+    public function hafalanForMany(array $santriIds): array
     {
-        $juzMap = $this->juzProgress->forMany($santriIds, $academicYearId, SetoranSubtype::Juz30);
-        $lastJuz30 = $this->latestBySubtype($santriIds, $academicYearId, SetoranSubtype::Juz30, onlyLulus: true);
-        $lastDoa = $this->latestBySubtype($santriIds, $academicYearId, SetoranSubtype::Doa, onlyLulus: false);
+        $juzMap = $this->juzProgress->forMany($santriIds, SetoranSubtype::Juz30);
+        $lastJuz30 = $this->latestBySubtype($santriIds, SetoranSubtype::Juz30, onlyLulus: true);
+        $lastDoa = $this->latestBySubtype($santriIds, SetoranSubtype::Doa, onlyLulus: false);
 
         $out = [];
         foreach ($santriIds as $id) {
@@ -110,17 +110,17 @@ class SetoranProgress
     /**
      * @return BacaanRow
      */
-    public function bacaanForSantri(int $santriId, int $academicYearId): array
+    public function bacaanForSantri(int $santriId): array
     {
-        return $this->bacaanForMany([$santriId], $academicYearId)[$santriId];
+        return $this->bacaanForMany([$santriId])[$santriId];
     }
 
     /**
      * @return HafalanRow
      */
-    public function hafalanForSantri(int $santriId, int $academicYearId): array
+    public function hafalanForSantri(int $santriId): array
     {
-        return $this->hafalanForMany([$santriId], $academicYearId)[$santriId];
+        return $this->hafalanForMany([$santriId])[$santriId];
     }
 
     private function activeSnapshot(
@@ -173,7 +173,6 @@ class SetoranProgress
      */
     private function latestBySubtype(
         array $santriIds,
-        int $academicYearId,
         SetoranSubtype $subtype,
         bool $onlyLulus,
     ): array {
@@ -184,7 +183,6 @@ class SetoranProgress
         $query = HafalanSetoran::query()
             ->with('surah:id,name_id,ayah_count')
             ->whereIn('santri_id', $santriIds)
-            ->where('academic_year_id', $academicYearId)
             ->where('subtype', $subtype)
             ->orderByDesc('setoran_date')
             ->orderByDesc('id');

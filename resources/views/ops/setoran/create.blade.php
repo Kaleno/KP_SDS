@@ -20,7 +20,7 @@
             @if ($session ?? null)
                 <x-empty>Belum ada santri berstatus hadir di sesi ini.</x-empty>
             @else
-                <x-empty>Tidak ada santri aktif di halaqah Anda.</x-empty>
+                <x-empty>Tidak ada santri aktif untuk disetor.</x-empty>
             @endif
         @else
             @if ($session ?? null)

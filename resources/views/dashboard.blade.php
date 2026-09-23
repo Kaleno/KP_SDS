@@ -23,9 +23,6 @@
             @elseif ($overview)
                 <p class="mt-2 text-sm text-teal-100/80">
                     {{ $overview['dayLabel'] }}, {{ $overview['todayLabel'] }}
-                    @if (! empty($overview['year']))
-                        · {{ $overview['year']->name }}
-                    @endif
                 </p>
             @endif
         </div>

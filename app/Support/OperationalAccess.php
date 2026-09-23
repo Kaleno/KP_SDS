@@ -2,9 +2,6 @@
 
 namespace App\Support;
 
-use App\Models\AcademicYear;
-use App\Models\Halaqah;
-use App\Models\HalaqahMember;
 use App\Models\SantriProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,80 +13,30 @@ class OperationalAccess
         return $user->hasRole(Role::Ketua) || $user->hasAnyRole(Role::teaching());
     }
 
-    public function canOperateHalaqah(User $user, Halaqah $halaqah): bool
-    {
-        if ($user->hasRole(Role::Ketua) || $user->hasRole(Role::KetuaPengajar)) {
-            return true;
-        }
-
-        return $user->hasRole(Role::Pengajar)
-            && (int) $halaqah->ustaz_user_id === (int) $user->id;
-    }
-
     public function canViewSantri(User $user, SantriProfile $santri): bool
     {
-        if ($user->hasRole(Role::Ketua) || $user->hasRole(Role::KetuaPengajar)) {
-            return true;
-        }
-
-        return $this->guidedMemberQuery($user)
-            ->where('santri_id', $santri->id)
-            ->exists();
+        return $this->canOperateDaily($user);
     }
 
     /**
-     * @return Builder<Halaqah>
+     * @return Builder<SantriProfile>
      */
-    public function halaqahQuery(User $user): Builder
+    public function activeSantriQuery(?User $user = null): Builder
     {
-        $query = Halaqah::query()->where('academic_year_id', $this->activeYearId());
-
-        if ($user->hasRole(Role::Ketua) || $user->hasRole(Role::KetuaPengajar)) {
-            return $query;
-        }
-
-        return $query->where('ustaz_user_id', $user->id);
+        return SantriProfile::query()->aktif()->with('user');
     }
 
     /**
-     * @return Builder<HalaqahMember>
+     * @return list<int>
      */
-    public function guidedMemberQuery(User $user): Builder
+    public function activeSantriIds(?User $user = null): array
     {
-        $yearId = $this->activeYearId();
-
-        return HalaqahMember::query()
-            ->aktif()
-            ->where('academic_year_id', $yearId)
-            ->whereHas('halaqah', function (Builder $query) use ($user, $yearId): void {
-                $query->aktif()->where('academic_year_id', $yearId);
-
-                if (! $user->hasRole(Role::Ketua) && ! $user->hasRole(Role::KetuaPengajar)) {
-                    $query->where('ustaz_user_id', $user->id);
-                }
-            });
+        return $this->activeSantriQuery($user)->pluck('id')->map(fn ($id): int => (int) $id)->all();
     }
 
-    private function activeYearId(): int
+    public function assertCanOperate(User $user): void
     {
-        return (int) (AcademicYear::query()->aktif()->value('id') ?: 0);
-    }
-
-    /**
-     * @return list<int>|null null = semua santri (Ketua / Ketua Pengajar)
-     */
-    public function santriIds(User $user): ?array
-    {
-        if ($user->hasRole(Role::Ketua) || $user->hasRole(Role::KetuaPengajar)) {
-            return null;
-        }
-
-        return $this->guidedMemberQuery($user)->pluck('santri_id')->all();
-    }
-
-    public function assertHalaqah(User $user, Halaqah $halaqah): void
-    {
-        abort_unless($this->canOperateHalaqah($user, $halaqah), 403);
+        abort_unless($this->canOperateDaily($user), 403);
     }
 
     public function assertSantri(User $user, SantriProfile $santri): void

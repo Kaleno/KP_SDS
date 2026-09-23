@@ -4,20 +4,16 @@ namespace App\Services;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SetoranStatus;
-use App\Models\AcademicYear;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Models\HafalanSetoran;
-use App\Models\Halaqah;
 use App\Models\SantriProfile;
-use App\Models\Schedule;
 use App\Models\User;
 use App\Support\DateLabel;
 use App\Support\OperationalAccess;
 use App\Support\Role;
 use App\Support\WeekDay;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class OperationalDashboard
@@ -30,27 +26,22 @@ class OperationalDashboard
 
     /**
      * @return array{
-     *     year: AcademicYear|null,
      *     dayLabel: string,
      *     todayLabel: string,
      *     isOffDay: bool,
      *     offDayMessage: string|null,
      *     stats: array{
-     *         halaqah: int,
      *         santriAktif: int,
+     *         pengajar: int,
      *         setoranHariIni: int,
      *         alfaHariIni: int,
      *         hadirHariIni: int,
      *         izinHariIni: int,
      *         sakitHariIni: int,
-     *         slotHariIni: int,
-     *         sesiTerbuka: int,
-     *         ustaz: int,
-     *         anggotaHalaqah: int,
+     *         sesiHariIni: int,
      *         sudahSetorHariIni: int
      *     },
-     *     todaySlots: Collection<int, Schedule>,
-     *     halaqahRows: Collection<int, array{halaqah: Halaqah, members: int, setoranToday: int, alfaToday: int}>,
+     *     todaySession: AttendanceSession|null,
      *     recentSetoran: Collection<int, HafalanSetoran>,
      *     alfaToday: Collection<int, Attendance>,
      *     pendingSetoran: Collection<int, SantriProfile>,
@@ -64,92 +55,50 @@ class OperationalDashboard
      *         izin: int,
      *         sakit: int,
      *         alfa: int,
-     *         total: int,
-     *         alfaNames: Collection<int, Attendance>,
-     *         missing: Collection<int, SantriProfile>
+     *         total: int
      *     }
      * }
      */
     public function for(User $user): array
     {
-        $year = AcademicYear::query()->aktif()->first();
         $today = now();
         $todayDate = $today->toDateString();
         $day = $today->isoWeekday();
-        $halaqahIds = $this->access->halaqahQuery($user)->aktif()->pluck('id');
         $isOffDay = $this->calendar->isOffDay($today);
 
-        $todaySlots = $halaqahIds->isEmpty() || $isOffDay
-            ? collect()
-            : $this->sessions->ensureForDate($user, $halaqahIds, $today);
-
-        $attendanceToday = $this->attendanceCountsBetween($halaqahIds, $todayDate, $todayDate, $year);
-        $setoranHariIni = $this->setoranCountToday($halaqahIds, $todayDate, $year);
-        $anggotaIds = $this->guidedAktifSantriIds($user);
-        $sudahSetorHariIni = $this->sudahSetorCount($anggotaIds, $todayDate, $year);
-
-        $santriAktif = $user->hasRole(Role::Ketua)
-            ? SantriProfile::query()->aktif()->count()
-            : $anggotaIds->count();
-
-        $halaqahList = $halaqahIds->isEmpty()
-            ? collect()
-            : Halaqah::query()
-                ->with('ustaz')
-                ->withCount('activeMembers')
-                ->whereIn('id', $halaqahIds)
-                ->orderBy('name')
-                ->get();
-
-        $setoranByHalaqah = $this->countByHalaqah(
-            HafalanSetoran::query()
-                ->whereIn('halaqah_id', $halaqahIds)
-                ->whereDate('setoran_date', $todayDate)
-                ->when($year, fn ($query) => $query->where('academic_year_id', $year->id)),
-        );
-
-        $alfaByHalaqah = $this->countByHalaqahFromAttendance($halaqahIds, $todayDate, $year, AttendanceStatus::Alfa);
-
-        $halaqahRows = $halaqahList->map(fn (Halaqah $halaqah): array => [
-            'halaqah' => $halaqah,
-            'members' => (int) $halaqah->active_members_count,
-            'setoranToday' => (int) ($setoranByHalaqah[$halaqah->id] ?? 0),
-            'alfaToday' => (int) ($alfaByHalaqah[$halaqah->id] ?? 0),
-        ]);
+        $todaySession = $isOffDay ? null : $this->sessions->ensureForDate($user, $today);
+        $santriIds = collect($this->access->activeSantriIds($user));
+        $attendanceToday = $this->attendanceCountsBetween($todayDate, $todayDate);
+        $setoranHariIni = HafalanSetoran::query()->whereDate('setoran_date', $todayDate)->count();
+        $sudahSetorHariIni = $this->sudahSetorCount($santriIds, $todayDate);
 
         $weekFrom = now()->copy()->startOfWeek(Carbon::MONDAY)->toDateString();
-        $weekTo = $todayDate;
-        $weekCounts = $this->attendanceCountsBetween($halaqahIds, $weekFrom, $weekTo, $year);
+        $weekCounts = $this->attendanceCountsBetween($weekFrom, $todayDate);
 
         return [
-            'year' => $year,
             'dayLabel' => WeekDay::label($day),
             'todayLabel' => DateLabel::dayMonthYear(now()),
             'isOffDay' => $isOffDay,
             'offDayMessage' => $isOffDay ? $this->calendar->offDayMessage($today) : null,
             'stats' => [
-                'halaqah' => $halaqahList->count(),
-                'santriAktif' => $santriAktif,
+                'santriAktif' => $santriIds->count(),
+                'pengajar' => User::query()->role(Role::teaching())->where('is_active', true)->count(),
                 'setoranHariIni' => $setoranHariIni,
                 'alfaHariIni' => $attendanceToday[AttendanceStatus::Alfa->value],
                 'hadirHariIni' => $attendanceToday[AttendanceStatus::Hadir->value],
                 'izinHariIni' => $attendanceToday[AttendanceStatus::Izin->value],
                 'sakitHariIni' => $attendanceToday[AttendanceStatus::Sakit->value],
-                'slotHariIni' => $todaySlots->count(),
-                'sesiTerbuka' => $todaySlots->filter(fn (Schedule $slot) => $slot->sessions->isNotEmpty())->count(),
-                'ustaz' => $halaqahList->pluck('ustaz_user_id')->unique()->count(),
-                'anggotaHalaqah' => $anggotaIds->count(),
+                'sesiHariIni' => $todaySession ? 1 : 0,
                 'sudahSetorHariIni' => $sudahSetorHariIni,
             ],
-            'todaySlots' => $todaySlots,
-            'halaqahRows' => $halaqahRows,
-            'recentSetoran' => $this->recentSetoran($halaqahIds, $year),
-            'alfaToday' => $this->alfaToday($halaqahIds, $todayDate, $year),
-            'pendingSetoran' => $this->pendingSetoran($user, $year, $todayDate),
-            'followUpSetoran' => $this->followUpSetoran($halaqahIds, $todayDate, $year),
+            'todaySession' => $todaySession,
+            'recentSetoran' => $this->recentSetoran(),
+            'alfaToday' => $this->alfaToday($todayDate),
+            'pendingSetoran' => $this->pendingSetoran($santriIds, $todayDate),
+            'followUpSetoran' => $this->followUpSetoran($todayDate),
             'week' => [
                 'from' => $weekFrom,
-                'to' => $weekTo,
+                'to' => $todayDate,
                 'fromLabel' => now()->copy()->startOfWeek(Carbon::MONDAY)->format('d/m'),
                 'toLabel' => now()->format('d/m'),
                 'hadir' => $weekCounts[AttendanceStatus::Hadir->value],
@@ -157,17 +106,14 @@ class OperationalDashboard
                 'sakit' => $weekCounts[AttendanceStatus::Sakit->value],
                 'alfa' => $weekCounts[AttendanceStatus::Alfa->value],
                 'total' => array_sum($weekCounts),
-                'alfaNames' => $this->alfaBetween($halaqahIds, $weekFrom, $weekTo, $year),
-                'missing' => $this->missingAttendanceBetween($anggotaIds, $halaqahIds, $weekFrom, $weekTo, $year),
             ],
         ];
     }
 
     /**
-     * @param  Collection<int, int>  $halaqahIds
      * @return array<string, int>
      */
-    private function attendanceCountsBetween(Collection $halaqahIds, string $from, string $to, ?AcademicYear $year): array
+    private function attendanceCountsBetween(string $from, string $to): array
     {
         $counts = [
             AttendanceStatus::Hadir->value => 0,
@@ -176,21 +122,11 @@ class OperationalDashboard
             AttendanceStatus::Alfa->value => 0,
         ];
 
-        if ($halaqahIds->isEmpty()) {
-            return $counts;
-        }
-
         $rows = Attendance::query()
             ->selectRaw('status, COUNT(*) as total')
-            ->whereHas('session', function ($query) use ($halaqahIds, $from, $to, $year): void {
+            ->whereHas('session', function ($query) use ($from, $to): void {
                 $query->whereDate('session_date', '>=', $from)
-                    ->whereDate('session_date', '<=', $to)
-                    ->whereHas('schedule', function ($schedule) use ($halaqahIds, $year): void {
-                        $schedule->whereIn('halaqah_id', $halaqahIds);
-                        if ($year) {
-                            $schedule->whereHas('halaqah', fn ($halaqah) => $halaqah->where('academic_year_id', $year->id));
-                        }
-                    });
+                    ->whereDate('session_date', '<=', $to);
             })
             ->groupBy('status')
             ->pluck('total', 'status');
@@ -203,69 +139,12 @@ class OperationalDashboard
     }
 
     /**
-     * @param  Collection<int, int>  $halaqahIds
-     */
-    private function setoranCountToday(Collection $halaqahIds, string $today, ?AcademicYear $year): int
-    {
-        if ($halaqahIds->isEmpty()) {
-            return 0;
-        }
-
-        return HafalanSetoran::query()
-            ->whereIn('halaqah_id', $halaqahIds)
-            ->whereDate('setoran_date', $today)
-            ->when($year, fn ($query) => $query->where('academic_year_id', $year->id))
-            ->count();
-    }
-
-    /**
-     * @param  Builder<HafalanSetoran>  $query
-     * @return Collection<int, int>
-     */
-    private function countByHalaqah($query): Collection
-    {
-        return $query
-            ->selectRaw('halaqah_id, COUNT(*) as total')
-            ->groupBy('halaqah_id')
-            ->pluck('total', 'halaqah_id');
-    }
-
-    /**
-     * @param  Collection<int, int>  $halaqahIds
-     * @return Collection<int, int>
-     */
-    private function countByHalaqahFromAttendance(Collection $halaqahIds, string $today, ?AcademicYear $year, AttendanceStatus $status): Collection
-    {
-        if ($halaqahIds->isEmpty()) {
-            return collect();
-        }
-
-        return Attendance::query()
-            ->selectRaw('schedules.halaqah_id as halaqah_id, COUNT(*) as total')
-            ->join('attendance_sessions', 'attendance_sessions.id', '=', 'attendances.attendance_session_id')
-            ->join('schedules', 'schedules.id', '=', 'attendance_sessions.schedule_id')
-            ->where('attendances.status', $status)
-            ->whereDate('attendance_sessions.session_date', $today)
-            ->whereIn('schedules.halaqah_id', $halaqahIds)
-            ->when($year, fn ($query) => $query->whereHas('session.schedule.halaqah', fn ($halaqah) => $halaqah->where('academic_year_id', $year->id)))
-            ->groupBy('schedules.halaqah_id')
-            ->pluck('total', 'halaqah_id');
-    }
-
-    /**
-     * @param  Collection<int, int>  $halaqahIds
      * @return Collection<int, HafalanSetoran>
      */
-    private function recentSetoran(Collection $halaqahIds, ?AcademicYear $year): Collection
+    private function recentSetoran(): Collection
     {
-        if ($halaqahIds->isEmpty()) {
-            return collect();
-        }
-
         return HafalanSetoran::query()
-            ->with(['santri.user', 'surah', 'halaqah'])
-            ->whereIn('halaqah_id', $halaqahIds)
-            ->when($year, fn ($query) => $query->where('academic_year_id', $year->id))
+            ->with(['santri.user', 'surah'])
             ->orderByDesc('setoran_date')
             ->orderByDesc('id')
             ->limit(6)
@@ -273,48 +152,23 @@ class OperationalDashboard
     }
 
     /**
-     * @param  Collection<int, int>  $halaqahIds
      * @return Collection<int, Attendance>
      */
-    private function alfaToday(Collection $halaqahIds, string $today, ?AcademicYear $year): Collection
+    private function alfaToday(string $today): Collection
     {
-        if ($halaqahIds->isEmpty()) {
-            return collect();
-        }
-
         return Attendance::query()
-            ->with(['santri.user', 'session.schedule.halaqah'])
+            ->with(['santri.user', 'session'])
             ->where('status', AttendanceStatus::Alfa)
-            ->whereHas('session', function ($query) use ($halaqahIds, $today, $year): void {
-                $query->whereDate('session_date', $today)
-                    ->whereHas('schedule', function ($schedule) use ($halaqahIds, $year): void {
-                        $schedule->whereIn('halaqah_id', $halaqahIds);
-                        if ($year) {
-                            $schedule->whereHas('halaqah', fn ($halaqah) => $halaqah->where('academic_year_id', $year->id));
-                        }
-                    });
-            })
+            ->whereHas('session', fn ($query) => $query->whereDate('session_date', $today))
             ->orderBy('id')
             ->limit(8)
             ->get();
     }
 
     /**
-     * @return Collection<int, int>
-     */
-    private function guidedAktifSantriIds(User $user): Collection
-    {
-        return $this->access->guidedMemberQuery($user)
-            ->whereHas('santri', fn ($query) => $query->aktif())
-            ->pluck('santri_id')
-            ->unique()
-            ->values();
-    }
-
-    /**
      * @param  Collection<int, int>  $santriIds
      */
-    private function sudahSetorCount(Collection $santriIds, string $today, ?AcademicYear $year): int
+    private function sudahSetorCount(Collection $santriIds, string $today): int
     {
         if ($santriIds->isEmpty()) {
             return 0;
@@ -323,28 +177,26 @@ class OperationalDashboard
         return HafalanSetoran::query()
             ->whereIn('santri_id', $santriIds)
             ->whereDate('setoran_date', $today)
-            ->when($year, fn ($query) => $query->where('academic_year_id', $year->id))
             ->distinct()
             ->count('santri_id');
     }
 
     /**
+     * @param  Collection<int, int>  $santriIds
      * @return Collection<int, SantriProfile>
      */
-    private function pendingSetoran(User $user, ?AcademicYear $year, string $today): Collection
+    private function pendingSetoran(Collection $santriIds, string $today): Collection
     {
-        $memberIds = $this->guidedAktifSantriIds($user);
-        if ($memberIds->isEmpty()) {
+        if ($santriIds->isEmpty()) {
             return collect();
         }
 
         $doneIds = HafalanSetoran::query()
-            ->whereIn('santri_id', $memberIds)
+            ->whereIn('santri_id', $santriIds)
             ->whereDate('setoran_date', $today)
-            ->when($year, fn ($query) => $query->where('academic_year_id', $year->id))
             ->pluck('santri_id');
 
-        $pendingIds = $memberIds->diff($doneIds)->values();
+        $pendingIds = $santriIds->diff($doneIds)->values();
         if ($pendingIds->isEmpty()) {
             return collect();
         }
@@ -353,13 +205,7 @@ class OperationalDashboard
             ->aktif()
             ->select('santri_profiles.*')
             ->join('users', 'users.id', '=', 'santri_profiles.user_id')
-            ->with([
-                'user',
-                'memberships' => fn ($query) => $query
-                    ->aktif()
-                    ->when($year, fn ($membership) => $membership->where('academic_year_id', $year->id))
-                    ->with('halaqah'),
-            ])
+            ->with('user')
             ->whereIn('santri_profiles.id', $pendingIds)
             ->orderBy('users.name')
             ->limit(8)
@@ -367,107 +213,16 @@ class OperationalDashboard
     }
 
     /**
-     * @param  Collection<int, int>  $halaqahIds
      * @return Collection<int, HafalanSetoran>
      */
-    private function followUpSetoran(Collection $halaqahIds, string $today, ?AcademicYear $year): Collection
+    private function followUpSetoran(string $today): Collection
     {
-        if ($halaqahIds->isEmpty()) {
-            return collect();
-        }
-
         return HafalanSetoran::query()
-            ->with(['santri.user', 'surah', 'halaqah'])
-            ->whereIn('halaqah_id', $halaqahIds)
+            ->with(['santri.user', 'surah'])
             ->whereDate('setoran_date', $today)
-            ->whereIn('status', [SetoranStatus::Mengulang, SetoranStatus::Mengulang])
-            ->when($year, fn ($query) => $query->where('academic_year_id', $year->id))
+            ->where('status', SetoranStatus::Mengulang)
             ->orderByDesc('id')
             ->limit(6)
-            ->get();
-    }
-
-    /**
-     * @param  Collection<int, int>  $halaqahIds
-     * @return Collection<int, Attendance>
-     */
-    private function alfaBetween(Collection $halaqahIds, string $from, string $to, ?AcademicYear $year): Collection
-    {
-        if ($halaqahIds->isEmpty()) {
-            return collect();
-        }
-
-        return Attendance::query()
-            ->with(['santri.user', 'session.schedule.halaqah'])
-            ->where('status', AttendanceStatus::Alfa)
-            ->whereHas('session', function ($query) use ($halaqahIds, $from, $to, $year): void {
-                $query->whereDate('session_date', '>=', $from)
-                    ->whereDate('session_date', '<=', $to)
-                    ->whereHas('schedule', function ($schedule) use ($halaqahIds, $year): void {
-                        $schedule->whereIn('halaqah_id', $halaqahIds);
-                        if ($year) {
-                            $schedule->whereHas('halaqah', fn ($halaqah) => $halaqah->where('academic_year_id', $year->id));
-                        }
-                    });
-            })
-            ->orderByDesc('id')
-            ->limit(8)
-            ->get();
-    }
-
-    /**
-     * @param  Collection<int, int>  $santriIds
-     * @param  Collection<int, int>  $halaqahIds
-     * @return Collection<int, SantriProfile>
-     */
-    private function missingAttendanceBetween(Collection $santriIds, Collection $halaqahIds, string $from, string $to, ?AcademicYear $year): Collection
-    {
-        if ($santriIds->isEmpty() || $halaqahIds->isEmpty()) {
-            return collect();
-        }
-
-        $hasSession = AttendanceSession::query()
-            ->whereDate('session_date', '>=', $from)
-            ->whereDate('session_date', '<=', $to)
-            ->whereHas('schedule', function ($schedule) use ($halaqahIds, $year): void {
-                $schedule->whereIn('halaqah_id', $halaqahIds);
-                if ($year) {
-                    $schedule->whereHas('halaqah', fn ($halaqah) => $halaqah->where('academic_year_id', $year->id));
-                }
-            })
-            ->exists();
-
-        if (! $hasSession) {
-            return collect();
-        }
-
-        $recordedIds = Attendance::query()
-            ->whereIn('santri_id', $santriIds)
-            ->whereHas('session', function ($query) use ($halaqahIds, $from, $to, $year): void {
-                $query->whereDate('session_date', '>=', $from)
-                    ->whereDate('session_date', '<=', $to)
-                    ->whereHas('schedule', function ($schedule) use ($halaqahIds, $year): void {
-                        $schedule->whereIn('halaqah_id', $halaqahIds);
-                        if ($year) {
-                            $schedule->whereHas('halaqah', fn ($halaqah) => $halaqah->where('academic_year_id', $year->id));
-                        }
-                    });
-            })
-            ->pluck('santri_id')
-            ->unique();
-
-        $missingIds = $santriIds->diff($recordedIds)->values();
-        if ($missingIds->isEmpty()) {
-            return collect();
-        }
-
-        return SantriProfile::query()
-            ->select('santri_profiles.*')
-            ->join('users', 'users.id', '=', 'santri_profiles.user_id')
-            ->with('user')
-            ->whereIn('santri_profiles.id', $missingIds)
-            ->orderBy('users.name')
-            ->limit(8)
             ->get();
     }
 }

@@ -5,12 +5,9 @@ namespace App\Services;
 use App\Enums\AttendanceStatus;
 use App\Enums\SetoranStatus;
 use App\Enums\SetoranSubtype;
-use App\Models\AcademicYear;
 use App\Models\Attendance;
 use App\Models\HafalanSetoran;
-use App\Models\HalaqahMember;
 use App\Models\SantriProfile;
-use App\Models\Schedule;
 use App\Support\DateLabel;
 use App\Support\WeekDay;
 use Illuminate\Support\Collection;
@@ -26,18 +23,22 @@ class SantriMonitor
     /**
      * @return array{
      *     santri: SantriProfile,
-     *     year: AcademicYear|null,
-     *     progress: HafalanProgressResult|null,
-     *     bacaan: array<string, mixed>|null,
-     *     hafalan: array<string, mixed>|null,
+     *     year: null,
+     *     progress: HafalanProgressResult,
+     *     bacaan: array<string, mixed>,
+     *     hafalan: array<string, mixed>,
      *     setoran: Collection<int, HafalanSetoran>,
      *     attendances: Collection<int, Attendance>,
-     *     membership: HalaqahMember|null,
-     *     schedules: Collection<int, Schedule>,
+     *     membership: null,
+     *     schedules: Collection<int, never>,
+     *     payments: list<mixed>,
+     *     currentPayment: mixed,
+     *     sppAmount: mixed,
+     *     unpaidMonths: int,
      *     snapshot: array{
      *         dayLabel: string,
      *         todayLabel: string,
-     *         todaySlots: Collection<int, Schedule>,
+     *         todaySlots: Collection<int, never>,
      *         todayAttendance: Attendance|null,
      *         todaySetoran: Collection<int, HafalanSetoran>,
      *         latestSetoran: HafalanSetoran|null,
@@ -47,39 +48,17 @@ class SantriMonitor
      *     }
      * }
      */
-    public function for(SantriProfile $santri, ?AcademicYear $year): array
+    public function for(SantriProfile $santri): array
     {
         $santri->loadMissing('user');
 
-        $membership = null;
-        $schedules = collect();
-        $progress = null;
-        $bacaan = null;
-        $hafalan = null;
-
-        if ($year) {
-            $membership = $santri->memberships()
-                ->aktif()
-                ->where('academic_year_id', $year->id)
-                ->with([
-                    'halaqah.ustaz',
-                    'halaqah.schedules' => fn ($query) => $query
-                        ->where('is_active', true)
-                        ->orderBy('day_of_week')
-                        ->orderBy('start_time'),
-                ])
-                ->first();
-
-            $schedules = $membership?->halaqah->schedules ?? collect();
-            $progress = $this->progress->forSantri($santri, $year, SetoranSubtype::Alquran);
-            $bacaan = $this->setoranProgress->bacaanForSantri((int) $santri->id, (int) $year->id);
-            $hafalan = $this->setoranProgress->hafalanForSantri((int) $santri->id, (int) $year->id);
-        }
+        $progress = $this->progress->forSantri($santri, SetoranSubtype::Alquran);
+        $bacaan = $this->setoranProgress->bacaanForSantri((int) $santri->id);
+        $hafalan = $this->setoranProgress->hafalanForSantri((int) $santri->id);
 
         $setoran = HafalanSetoran::query()
             ->with('surah')
             ->where('santri_id', $santri->id)
-            ->when($year, fn ($query) => $query->where('academic_year_id', $year->id))
             ->orderByDesc('setoran_date')
             ->orderByDesc('id')
             ->limit(8)
@@ -88,11 +67,8 @@ class SantriMonitor
         $attendances = Attendance::query()
             ->select('attendances.*')
             ->join('attendance_sessions', 'attendance_sessions.id', '=', 'attendances.attendance_session_id')
-            ->with(['session.schedule.halaqah'])
+            ->with(['session'])
             ->where('attendances.santri_id', $santri->id)
-            ->when($year, function ($query) use ($year): void {
-                $query->whereHas('session.schedule.halaqah', fn ($halaqah) => $halaqah->where('academic_year_id', $year->id));
-            })
             ->orderByDesc('attendance_sessions.session_date')
             ->orderByDesc('attendances.id')
             ->limit(8)
@@ -104,21 +80,21 @@ class SantriMonitor
         $needsFollowUp = $latestSetoran && $latestSetoran->status === SetoranStatus::Mengulang
             ? $latestSetoran
             : null;
-        $attendanceCounts = $this->attendanceCounts($santri, $year);
+        $attendanceCounts = $this->attendanceCounts($santri);
         $payments = $this->spp->historyFor($santri, 6);
         $currentPayment = $payments[0] ?? null;
         $unpaidMonths = $this->spp->unpaidMonthCount($santri);
 
         return [
             'santri' => $santri,
-            'year' => $year,
+            'year' => null,
             'progress' => $progress,
             'bacaan' => $bacaan,
             'hafalan' => $hafalan,
             'setoran' => $setoran,
             'attendances' => $attendances,
-            'membership' => $membership,
-            'schedules' => $schedules,
+            'membership' => null,
+            'schedules' => collect(),
             'payments' => $payments,
             'currentPayment' => $currentPayment,
             'sppAmount' => $this->spp->monthlyAmount(),
@@ -126,7 +102,7 @@ class SantriMonitor
             'snapshot' => [
                 'dayLabel' => WeekDay::label($day),
                 'todayLabel' => DateLabel::dayMonthYear(now()),
-                'todaySlots' => $schedules->filter(fn (Schedule $slot): bool => (int) $slot->day_of_week === $day)->values(),
+                'todaySlots' => collect(),
                 'todayAttendance' => $attendances->first(
                     fn (Attendance $row): bool => $row->session->session_date->toDateString() === $today
                 ),
@@ -144,7 +120,7 @@ class SantriMonitor
     /**
      * @return array<string, int>
      */
-    private function attendanceCounts(SantriProfile $santri, ?AcademicYear $year): array
+    private function attendanceCounts(SantriProfile $santri): array
     {
         $counts = [
             AttendanceStatus::Hadir->value => 0,
@@ -156,9 +132,6 @@ class SantriMonitor
         $rows = Attendance::query()
             ->selectRaw('status, COUNT(*) as total')
             ->where('santri_id', $santri->id)
-            ->when($year, function ($query) use ($year): void {
-                $query->whereHas('session.schedule.halaqah', fn ($halaqah) => $halaqah->where('academic_year_id', $year->id));
-            })
             ->groupBy('status')
             ->pluck('total', 'status');
 
