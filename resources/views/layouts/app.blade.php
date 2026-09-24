@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <meta name="theme-color" content="#224942">
+        @include('partials.pwa')
 
         <title>{{ $title ?? config('app.name') }}</title>
 
@@ -30,7 +30,7 @@
             <div class="ui-content-scroll flex min-w-0 flex-1 flex-col safe-bottom lg:pb-0">
                 <header class="sticky top-0 z-10 hidden lg:block">
                     <div class="mx-4 mt-4 sm:mx-6 lg:mx-8">
-                        <div class="ui-card px-5 py-4">
+                        <div class="ui-card max-w-6xl px-5 py-4">
                             @isset($header)
                                 {{ $header }}
                             @else
@@ -40,7 +40,7 @@
                     </div>
                 </header>
 
-                <header class="lg:hidden px-4 pt-20 pb-1">
+                <header class="px-4 pb-1 pt-[calc(4.75rem+env(safe-area-inset-top))] lg:hidden">
                     @isset($header)
                         {{ $header }}
                     @else

@@ -41,6 +41,7 @@ class OperationalDashboard
      *         sesiHariIni: int,
      *         sudahSetorHariIni: int
      *     },
+     *     attendanceRecorded: bool,
      *     todaySession: AttendanceSession|null,
      *     recentSetoran: Collection<int, HafalanSetoran>,
      *     alfaToday: Collection<int, Attendance>,
@@ -88,6 +89,7 @@ class OperationalDashboard
                 'sesiHariIni' => $todaySession ? 1 : 0,
                 'sudahSetorHariIni' => $sudahSetorHariIni,
             ],
+            'attendanceRecorded' => $todaySession?->submitted_at !== null,
             'todaySession' => $todaySession,
             'recentSetoran' => $this->recentSetoran(),
             'alfaToday' => $this->alfaToday($todayDate),
@@ -175,7 +177,8 @@ class OperationalDashboard
             ->selectRaw('status, COUNT(*) as total')
             ->whereHas('session', function ($query) use ($from, $to): void {
                 $query->whereDate('session_date', '>=', $from)
-                    ->whereDate('session_date', '<=', $to);
+                    ->whereDate('session_date', '<=', $to)
+                    ->whereNotNull('submitted_at');
             })
             ->groupBy('status')
             ->pluck('total', 'status');
@@ -208,9 +211,11 @@ class OperationalDashboard
         return Attendance::query()
             ->with(['santri.user', 'session'])
             ->where('status', AttendanceStatus::Alfa)
-            ->whereHas('session', fn ($query) => $query->whereDate('session_date', $today))
+            ->whereHas('session', function ($query) use ($today): void {
+                $query->whereDate('session_date', $today)
+                    ->whereNotNull('submitted_at');
+            })
             ->orderBy('id')
-            ->limit(8)
             ->get();
     }
 

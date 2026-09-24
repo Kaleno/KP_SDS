@@ -5,7 +5,7 @@
     if ($user->hasRole(\App\Support\Role::SuperAdmin)) {
         $links = [
             ['label' => 'Beranda', 'route' => 'dashboard', 'match' => 'dashboard', 'icon' => 'home', 'group' => 'Utama', 'primary' => true],
-            ['label' => 'Akun Ketua', 'route' => 'super-admin.ketua.index', 'match' => 'super-admin.ketua.*', 'icon' => 'shield', 'group' => 'Sistem', 'primary' => true],
+            ['label' => 'Daftar Akun', 'route' => 'super-admin.ketua.index', 'match' => 'super-admin.ketua.*', 'icon' => 'shield', 'group' => 'Sistem', 'primary' => true],
         ];
     } elseif ($user->hasRole(\App\Support\Role::Ketua)) {
         $links = [
@@ -54,6 +54,11 @@
     $grouped = collect($links)->groupBy('group');
     $primaryLinks = collect($links)->where('primary', true)->values();
     $mobileCols = min(4, $primaryLinks->take(3)->count() + 1);
+    $mobileGrid = match ($mobileCols) {
+        2 => 'grid-cols-2',
+        3 => 'grid-cols-3',
+        default => 'grid-cols-4',
+    };
     $moreActive = collect($links)->contains(fn ($link) => ! $link['primary'] && request()->routeIs($link['match']))
         || request()->routeIs('profile.*');
     $initials = collect(explode(' ', $user->name))->map(fn ($part) => mb_substr($part, 0, 1))->take(2)->implode('');
@@ -102,7 +107,7 @@
     </div>
 </aside>
 
-<div class="lg:hidden fixed top-0 inset-x-0 z-30 px-3 pt-3">
+<div class="fixed inset-x-0 top-0 z-30 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden">
     <div class="flex items-center gap-2.5 rounded-2xl bg-teal-950/95 px-3 py-2.5 text-white shadow-lift backdrop-blur">
         <x-application-logo class="h-10 w-10 shrink-0" />
         <div class="min-w-0">
@@ -113,7 +118,7 @@
 </div>
 
 <nav class="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-teal-950/5 bg-white/95 backdrop-blur-md" style="padding-bottom: env(safe-area-inset-bottom)">
-    <div class="grid {{ 'grid-cols-'.$mobileCols }}">
+    <div class="grid {{ $mobileGrid }}">
         @foreach ($primaryLinks->take(3) as $link)
             <a href="{{ route($link['route']) }}"
                class="flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] {{ request()->routeIs($link['match']) ? 'text-teal-800 font-semibold' : 'text-slate-500' }}">

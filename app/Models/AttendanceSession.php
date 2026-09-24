@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['session_date', 'opened_by_user_id'])]
+#[Fillable(['session_date', 'opened_by_user_id', 'submitted_at'])]
 class AttendanceSession extends Model
 {
     /**
@@ -17,6 +17,7 @@ class AttendanceSession extends Model
     {
         return [
             'session_date' => 'date',
+            'submitted_at' => 'datetime',
         ];
     }
 

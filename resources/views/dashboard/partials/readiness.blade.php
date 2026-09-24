@@ -3,9 +3,6 @@
         <div class="min-w-0">
             <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold-700">Persiapan</p>
             <h2 class="mt-1 font-display text-2xl font-semibold text-teal-950">Belum siap dipakai</h2>
-            <p class="mt-2 max-w-xl text-sm text-slate-600">
-                Tambah pengajar dan santri aktif. Absensi berjalan Senin–Jumat untuk semua santri.
-            </p>
         </div>
         <a href="{{ route('ketua.santri.create') }}" class="btn-primary min-h-11 shrink-0">Tambah santri</a>
     </div>

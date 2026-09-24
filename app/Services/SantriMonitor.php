@@ -70,6 +70,7 @@ class SantriMonitor
             ->join('attendance_sessions', 'attendance_sessions.id', '=', 'attendances.attendance_session_id')
             ->with(['session'])
             ->where('attendances.santri_id', $santri->id)
+            ->whereNotNull('attendance_sessions.submitted_at')
             ->orderByDesc('attendance_sessions.session_date')
             ->orderByDesc('attendances.id')
             ->limit(8)
@@ -133,6 +134,7 @@ class SantriMonitor
         $rows = Attendance::query()
             ->selectRaw('status, COUNT(*) as total')
             ->where('santri_id', $santri->id)
+            ->whereHas('session', fn ($query) => $query->whereNotNull('submitted_at'))
             ->groupBy('status')
             ->pluck('total', 'status');
 

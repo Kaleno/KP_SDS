@@ -11,7 +11,7 @@
         </div>
     </x-slot>
 
-    <div class="max-w-6xl space-y-5">
+    <div class="ui-page">
         <div class="relative overflow-hidden rounded-3xl bg-teal-950 px-5 py-5 text-white shadow-lift sm:px-8 sm:py-6">
             <div class="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full bg-gold-400/20 blur-2xl"></div>
             <p class="text-[11px] uppercase tracking-[0.2em] text-gold-300">Assalamu'alaikum</p>
@@ -35,7 +35,7 @@
             <x-card>
                 <p class="text-sm text-slate-600">
                     Anda pemelihara teknis sistem. Kelola akun Ketua di menu
-                    <a href="{{ route('super-admin.ketua.index') }}" class="ui-link">Akun Ketua</a>.
+                    <a href="{{ route('super-admin.ketua.index') }}" class="ui-link">Daftar Akun</a>.
                     Menu operasional harian tidak tersedia di role ini.
                 </p>
             </x-card>

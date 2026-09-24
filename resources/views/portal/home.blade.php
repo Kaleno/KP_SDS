@@ -3,13 +3,10 @@
         <div>
             <p class="ui-section-title">Santri</p>
             <h1 class="font-display text-2xl font-semibold text-teal-950">Beranda</h1>
-            <p class="mt-0.5 text-sm text-slate-500">
-                Hanya melihat, tidak mengubah data
-            </p>
         </div>
     </x-slot>
 
-    <div class="max-w-3xl space-y-5">
+    <div class="w-full max-w-5xl space-y-5">
         @unless ($santri)
             <x-empty>Profil santri belum tersedia. Hubungi Ketua DKM.</x-empty>
         @else

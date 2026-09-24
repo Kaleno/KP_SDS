@@ -68,6 +68,7 @@ class PortalTest extends TestCase
         $session = AttendanceSession::query()->create([
             'session_date' => now()->toDateString(),
             'opened_by_user_id' => $fx['ustaz']->id,
+            'submitted_at' => now(),
         ]);
         Attendance::query()->create([
             'attendance_session_id' => $session->id,

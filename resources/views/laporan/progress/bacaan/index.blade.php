@@ -3,29 +3,27 @@
         <div>
             <p class="ui-section-title">Laporan</p>
             <h1 class="font-display text-2xl font-semibold text-teal-950">Progress</h1>
-            <p class="text-sm text-slate-500">
-                Bacaan: Alquran (juz aktif) & Iqro
-            </p>
         </div>
     </x-slot>
 
-    <div class="max-w-2xl space-y-3">
-        <div class="flex gap-2">
+    <div class="ui-page !space-y-3">
+        <div class="flex flex-wrap gap-2">
             <a href="{{ route('laporan.progress.bacaan.index') }}" class="btn-primary min-h-10 px-4 text-sm">Bacaan</a>
             <a href="{{ route('laporan.progress.hafalan.index') }}" class="btn-secondary min-h-10 px-4 text-sm">Hafalan</a>
         </div>
 
+        <div class="grid gap-3 lg:grid-cols-2">
         @forelse ($rows as $row)
             @php $data = $row['data']; @endphp
             <a href="{{ route('laporan.progress.bacaan.show', $row['santri']) }}"
                class="ui-card block p-4 transition hover:-translate-y-0.5 hover:shadow-lift">
                 <div class="flex items-start justify-between gap-3">
-                    <div>
+                    <div class="min-w-0">
                         <p class="font-semibold text-teal-950">{{ $row['santri']->user->name }}</p>
                         <p class="text-sm text-slate-500">NIS {{ $row['santri']->nis }}</p>
                         <p class="mt-1 text-sm text-slate-600">{{ $data['summary'] }}</p>
                     </div>
-                    <div class="text-right">
+                    <div class="shrink-0 text-right">
                         @if ($data['alquran'])
                             <p class="text-xl font-semibold tabular-nums text-teal-800">
                                 {{ $data['alquran']->percentLabel() }}
@@ -43,7 +41,10 @@
                 @endif
             </a>
         @empty
-            <x-empty>Belum ada santri aktif.</x-empty>
+            <div class="lg:col-span-2">
+                <x-empty>Belum ada santri aktif.</x-empty>
+            </div>
         @endforelse
+        </div>
     </div>
 </x-app-layout>

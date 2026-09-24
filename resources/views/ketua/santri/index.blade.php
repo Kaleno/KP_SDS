@@ -4,7 +4,6 @@
             <div>
                 <p class="ui-section-title">Master data</p>
                 <h1 class="font-display text-2xl font-semibold text-teal-950">Santri</h1>
-                <p class="text-sm text-slate-500">Username login = NIS</p>
             </div>
             <a href="{{ route('ketua.santri.create') }}" class="btn-primary">
                 <x-icon name="plus" class="h-4 w-4" /> Tambah
@@ -13,7 +12,7 @@
     </x-slot>
 
     <div
-        class="max-w-5xl space-y-4"
+        class="ui-page !space-y-4"
         x-data="{
             open: false,
             detail: null,
@@ -26,14 +25,14 @@
         }"
         @keydown.escape.window="close()"
     >
-        <form method="GET" class="flex flex-wrap gap-2">
-            <select name="status" class="ui-select min-w-[10rem]">
+        <form method="GET" class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <select name="status" class="ui-select w-full sm:w-auto sm:min-w-[12rem]">
                 <option value="">Semua status</option>
                 @foreach ($statuses as $status)
                     <option value="{{ $status->value }}" @selected($statusFilter === $status->value)>{{ $status->label() }}</option>
                 @endforeach
             </select>
-            <button class="btn-secondary">Filter</button>
+            <button class="btn-secondary w-full sm:w-auto">Filter</button>
         </form>
 
         <div class="ui-table-wrap">
@@ -53,8 +52,10 @@
                             <tr>
                                 <td data-label="NIS" class="font-medium">{{ $santri->nis }}</td>
                                 <td data-label="Nama">
-                                    <span class="font-medium text-teal-950">{{ $santri->user->name }}</span>
-                                    <span class="mt-0.5 block text-xs text-slate-500">{{ $santri->gender->label() }}</span>
+                                    <div class="ui-table-value">
+                                        <span class="font-medium text-teal-950">{{ $santri->user->name }}</span>
+                                        <span class="mt-0.5 block text-xs text-slate-500">{{ $santri->gender->label() }}</span>
+                                    </div>
                                 </td>
                                 <td data-label="Jalur">
                                     <x-badge :tone="$santri->track === \App\Enums\SantriTrack::Iqro ? 'warn' : 'ok'">
@@ -64,8 +65,8 @@
                                 <td data-label="Status">
                                     <x-badge :tone="$santri->status->badgeTone()">{{ $santri->status->label() }}</x-badge>
                                 </td>
-                                <td data-label="">
-                                    <div class="flex items-center justify-end gap-1">
+                                <td data-label="" class="ui-table-actions">
+                                    <div class="flex flex-wrap items-center justify-end gap-1">
                                         <button
                                             type="button"
                                             class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-teal-800 hover:bg-teal-50"

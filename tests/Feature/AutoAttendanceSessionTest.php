@@ -41,7 +41,6 @@ class AutoAttendanceSessionTest extends TestCase
             ->get(route('ops.attendance.index'))
             ->assertOk()
             ->assertSee('Isi absensi')
-            ->assertSee('Semua santri aktif')
             ->assertDontSee('Buka sesi');
 
         $this->assertSame(1, AttendanceSession::query()->count());
@@ -101,6 +100,23 @@ class AutoAttendanceSessionTest extends TestCase
         $this->assertSame(1, AttendanceSession::query()->count());
     }
 
+    public function test_unsubmitted_session_is_not_counted_as_attendance(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-23 10:00:00'));
+        $fx = $this->fixture();
+
+        $this->actingAs($fx['ustaz'])
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Belum diisi')
+            ->assertDontSee('Alfa hari ini');
+
+        $session = AttendanceSession::query()->first();
+        $this->assertNotNull($session);
+        $this->assertNull($session->submitted_at);
+        $this->assertSame(1, $session->attendances()->count());
+    }
+
     public function test_attendance_surfaces_use_date_without_kelas_framing(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-09-23 10:00:00'));
@@ -114,7 +130,6 @@ class AutoAttendanceSessionTest extends TestCase
             ->assertOk()
             ->assertSee('Hari ini')
             ->assertSee('Rabu, 23 September 2026')
-            ->assertSee('Semua santri aktif')
             ->assertDontSee('Halaqah')
             ->assertDontSee('07:00')
             ->assertDontSee('Masjid Utama');
@@ -138,7 +153,6 @@ class AutoAttendanceSessionTest extends TestCase
             ->get(route('ops.attendance.index'))
             ->assertOk()
             ->assertSee('Isi absensi')
-            ->assertSee('Semua santri aktif')
             ->assertDontSee('Belum ada kelas yang ditugaskan kepada Anda')
             ->assertDontSee('Tidak ada jadwal untuk');
     }

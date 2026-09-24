@@ -465,6 +465,10 @@ class SetoranController extends Controller
      */
     private function hadirSantriIds(User $user, AttendanceSession $session): Collection
     {
+        if ($session->submitted_at === null) {
+            return collect();
+        }
+
         $hadirIds = $session->attendances()
             ->where('status', AttendanceStatus::Hadir)
             ->pluck('santri_id');

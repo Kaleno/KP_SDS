@@ -217,6 +217,7 @@ class LaporanTest extends TestCase
         $session = AttendanceSession::query()->create([
             'session_date' => now()->toDateString(),
             'opened_by_user_id' => $fx['ustaz']->id,
+            'submitted_at' => now(),
         ]);
 
         $statuses = [AttendanceStatus::Hadir, AttendanceStatus::Izin, AttendanceStatus::Alfa];

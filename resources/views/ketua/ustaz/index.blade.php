@@ -4,7 +4,6 @@
             <div>
                 <p class="ui-section-title">Master data</p>
                 <h1 class="font-display text-2xl font-semibold text-teal-950">Pengajar</h1>
-                <p class="text-sm text-slate-500">Data ustadz · ketua pengajar dan pengajar</p>
             </div>
             <a href="{{ route('ketua.ustaz.create') }}" class="btn-primary">
                 <x-icon name="plus" class="h-4 w-4" /> Tambah
@@ -13,7 +12,7 @@
     </x-slot>
 
     <div
-        class="max-w-5xl space-y-4"
+        class="ui-page !space-y-4"
         x-data="{
             open: false,
             detail: null,
@@ -43,14 +42,16 @@
                             <tr>
                                 <td data-label="NIP" class="font-medium">{{ $ustaz->nip ?: '—' }}</td>
                                 <td data-label="Nama">
-                                    <span class="font-medium text-teal-950">{{ $ustaz->name }}</span>
-                                    <span class="mt-0.5 block text-xs text-slate-500">{{ $ustaz->username }}</span>
+                                    <div class="ui-table-value">
+                                        <span class="font-medium text-teal-950">{{ $ustaz->name }}</span>
+                                        <span class="mt-0.5 block text-xs text-slate-500">{{ $ustaz->username }}</span>
+                                    </div>
                                 </td>
                                 <td data-label="Peran">{{ \App\Support\Role::label($ustaz->getRoleNames()->first() ?? '') }}</td>
                                 <td data-label="Status">
                                     <x-badge :tone="$ustaz->is_active ? 'ok' : 'muted'">{{ $ustaz->is_active ? 'Aktif' : 'Tidak aktif' }}</x-badge>
                                 </td>
-                                <td data-label="">
+                                <td data-label="" class="ui-table-actions">
                                     <div class="flex flex-wrap items-center justify-end gap-1">
                                         <button
                                             type="button"

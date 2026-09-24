@@ -97,7 +97,4 @@
         </template>
         <p class="px-3 py-2 text-sm text-slate-500" x-show="filtered.length === 0">Surat tidak ditemukan.</p>
     </div>
-    @unless ($allowEmpty)
-        <p class="mt-1 text-xs text-slate-400">Ketik nama, nomor surat, atau juz, lalu pilih dari daftar.</p>
-    @endunless
 </div>

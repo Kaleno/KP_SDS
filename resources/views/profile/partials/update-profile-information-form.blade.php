@@ -1,7 +1,6 @@
 <section>
     <header>
         <h2 class="font-display text-lg font-semibold text-teal-950">Informasi akun</h2>
-        <p class="mt-1 text-sm text-slate-500">Perbarui nama dan email. Username dipakai untuk login dan tidak diubah di sini.</p>
     </header>
 
     <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-5">

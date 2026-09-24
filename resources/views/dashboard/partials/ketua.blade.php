@@ -47,7 +47,7 @@
                     <p class="mt-1 text-xs text-slate-500">Rp {{ number_format($sppSummary['unpaidThisMonthAmount'], 0, ',', '.') }}</p>
                 @endif
             </div>
-            <a href="{{ route('ops.spp.index', ['filter' => 'nunggak']) }}" class="ui-card p-4">
+            <a href="{{ route('ops.spp.index', ['filter' => 'nunggak']) }}" class="ui-card col-span-2 p-4 sm:col-span-1">
                 <p class="text-xs text-slate-500">Nunggak &gt;1 bulan</p>
                 <p class="mt-1 font-display text-2xl font-semibold {{ $sppSummary['deepArrears'] > 0 ? 'text-rose-800' : 'text-teal-950' }}">
                     {{ $sppSummary['deepArrears'] }}

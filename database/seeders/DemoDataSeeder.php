@@ -137,8 +137,15 @@ class DemoDataSeeder extends Seeder
         if ($today->isWeekday()) {
             $session = AttendanceSession::query()->firstOrCreate(
                 ['session_date' => $todayDate],
-                ['opened_by_user_id' => $ustaz->id],
+                [
+                    'opened_by_user_id' => $ustaz->id,
+                    'submitted_at' => now(),
+                ],
             );
+
+            if ($session->submitted_at === null) {
+                $session->forceFill(['submitted_at' => now()])->save();
+            }
 
             $demoStatuses = [AttendanceStatus::Hadir, AttendanceStatus::Hadir, AttendanceStatus::Alfa, AttendanceStatus::Hadir];
             foreach ($profiles->values() as $index => $profile) {

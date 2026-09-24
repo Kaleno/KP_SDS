@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <meta name="theme-color" content="#0e221f">
+        @include('partials.pwa')
 
         <title>{{ config('app.name') }}</title>
 
@@ -25,27 +25,7 @@
                             <p class="font-display text-lg text-white">{{ config('app.name') }}</p>
                         </div>
                     </div>
-                    <h1 class="mt-16 font-display text-4xl leading-tight text-white text-balance">
-                        Hafalan, absensi, dan jadwal dalam satu ruang yang tenang.
-                    </h1>
-                    <p class="mt-5 max-w-md text-teal-100/80 leading-relaxed">
-                        &ldquo;Barangsiapa menempuh suatu jalan untuk mencari ilmu, maka Allah mudahkan untuknya jalan menuju surga.&rdquo; (HR. Muslim). Sebuah ruang digital untuk mendukung perjalanan mulia para santri.
-                    </p>
                 </div>
-                <ul class="relative grid gap-4 text-sm text-teal-100/90">
-                    <li class="flex items-start gap-3">
-                        <span class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-gold-300"><x-icon name="book" class="h-4 w-4" /></span>
-                        <span>Pembelajaran Iqro, Alquran dan Hafalan</span>
-                    </li>
-                    <li class="flex items-start gap-3">
-                        <span class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-gold-300"><x-icon name="check-circle" class="h-4 w-4" /></span>
-                        <span>Absensi sesi harian Senin–Jumat untuk semua santri aktif.</span>
-                    </li>
-                    <li class="flex items-start gap-3">
-                        <span class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-gold-300"><x-icon name="chart" class="h-4 w-4" /></span>
-                        <span>Progress bacaan & hafalan disesuaikan jenis setoran.</span>
-                    </li>
-                </ul>
             </aside>
 
             <div class="flex min-h-screen flex-col items-center justify-center px-4 py-10 sm:px-8">

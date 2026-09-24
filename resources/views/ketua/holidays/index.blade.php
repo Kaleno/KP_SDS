@@ -3,14 +3,13 @@
         <div>
             <p class="ui-section-title">Kalender</p>
             <h1 class="font-display text-2xl font-semibold text-teal-950">Tanggal merah</h1>
-            <p class="text-sm text-slate-500">Sabtu & Minggu otomatis libur. Tambah tanggal merah di sini — libur mematikan sesi absensi otomatis Senin–Jumat. Bisa satu hari atau rentang tanggal.</p>
         </div>
     </x-slot>
 
-    <div class="max-w-xl space-y-5">
-        <form method="POST" action="{{ route('ketua.holidays.store') }}" class="ui-card p-5 grid gap-4">
+    <div class="grid w-full max-w-5xl items-start gap-5 lg:grid-cols-2">
+        <form method="POST" action="{{ route('ketua.holidays.store') }}" class="ui-card grid gap-4 p-5">
             @csrf
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                     <x-input-label for="date_from" value="Dari tanggal" />
                     <x-text-input id="date_from" name="date_from" type="date" class="mt-1.5" :value="old('date_from')" required />
@@ -24,7 +23,7 @@
             </div>
             <div>
                 <x-input-label for="name" value="Nama libur" />
-                <x-text-input id="name" name="name" class="mt-1.5" :value="old('name')" required placeholder="Contoh: Libur Idul Fitri" />
+                <x-text-input id="name" name="name" class="mt-1.5" :value="old('name')" required />
                 <x-input-error class="mt-2" :messages="$errors->get('name')" />
             </div>
             <x-primary-button>Tambah</x-primary-button>
@@ -33,11 +32,11 @@
         <div class="space-y-2">
             @forelse ($holidays as $holiday)
                 <div class="ui-card flex items-center justify-between gap-3 p-4">
-                    <div>
+                    <div class="min-w-0">
                         <p class="font-medium text-teal-950">{{ $holiday->name }}</p>
                         <p class="text-sm text-slate-500">{{ $holiday->date->format('d/m/Y') }}</p>
                     </div>
-                    <form method="POST" action="{{ route('ketua.holidays.destroy', $holiday) }}">
+                    <form method="POST" action="{{ route('ketua.holidays.destroy', $holiday) }}" class="shrink-0">
                         @csrf
                         @method('DELETE')
                         <button class="text-sm font-semibold text-rose-700">Hapus</button>

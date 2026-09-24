@@ -100,7 +100,7 @@
         <input id="doa_name" name="doa_name" class="mt-1.5 ui-input"
                x-model="doaName"
                x-bind:disabled="subtype !== 'doa'"
-               placeholder="Contoh: Doa sebelum makan" />
+               placeholder="Nama doa" />
         <x-input-error class="mt-2" :messages="$errors->get('doa_name')" />
     </div>
 
@@ -134,7 +134,6 @@
                         :selected="old('quran_surah_id', $setoran?->quran_surah_id)"
                         :with-juz="true"
                     />
-                    <p class="mt-1 text-xs text-slate-500">Hafalan Juz 30: An-Naba s.d. An-Nas.</p>
                 </div>
             </template>
             <p x-show="selectedJuz" x-cloak class="mt-1 text-xs font-medium text-teal-800">

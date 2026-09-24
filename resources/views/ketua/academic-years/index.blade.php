@@ -3,11 +3,10 @@
         <div>
             <p class="ui-section-title">Master data</p>
             <h1 class="font-display text-2xl font-semibold text-teal-950">Tahun ajaran</h1>
-            <p class="text-sm text-slate-500">Hanya satu tahun yang aktif</p>
         </div>
     </x-slot>
 
-    <div class="max-w-4xl space-y-6">
+    <div class="ui-page !space-y-6">
         <x-card>
             <h2 class="font-display text-lg font-semibold text-teal-950">Tambah tahun ajaran</h2>
             <form method="POST" action="{{ route('ketua.academic-years.store') }}" class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -59,8 +58,8 @@
                                     <x-badge tone="muted">Nonaktif</x-badge>
                                 @endif
                             </td>
-                            <td data-label="">
-                                <div class="flex justify-end gap-3">
+                            <td data-label="" class="ui-table-actions">
+                                <div class="flex flex-wrap justify-end gap-3">
                                     @unless ($year->is_active)
                                         <form method="POST" action="{{ route('ketua.academic-years.activate', $year) }}">
                                             @csrf

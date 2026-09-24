@@ -3,32 +3,32 @@
         <div>
             <p class="ui-section-title">Keuangan</p>
             <h1 class="font-display text-2xl font-semibold text-teal-950">Kas DKM</h1>
-            <p class="text-sm text-slate-500">Hanya catatan pemasukan & pengeluaran kas DKM. Pembayaran SPP dicatat di menu SPP dan tidak masuk otomatis ke sini — setoran ke kas dicatat manual saat uang diserahkan.</p>
         </div>
     </x-slot>
 
-    <div class="max-w-2xl space-y-5">
-        <div class="grid grid-cols-3 gap-3">
-            <div class="ui-card p-4 text-center">
+    <div class="ui-page">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="ui-card p-4">
                 <p class="text-xs text-slate-500">Pemasukan</p>
-                <p class="mt-1 font-display text-lg font-semibold text-teal-800">{{ number_format($pemasukan, 0, ',', '.') }}</p>
+                <p class="mt-1 font-display text-2xl font-semibold text-teal-800">{{ number_format($pemasukan, 0, ',', '.') }}</p>
             </div>
-            <div class="ui-card p-4 text-center">
+            <div class="ui-card p-4">
                 <p class="text-xs text-slate-500">Pengeluaran</p>
-                <p class="mt-1 font-display text-lg font-semibold {{ $pengeluaran > 0 ? 'text-rose-800' : 'text-teal-950' }}">{{ number_format($pengeluaran, 0, ',', '.') }}</p>
+                <p class="mt-1 font-display text-2xl font-semibold {{ $pengeluaran > 0 ? 'text-rose-800' : 'text-teal-950' }}">{{ number_format($pengeluaran, 0, ',', '.') }}</p>
             </div>
-            <div class="ui-card p-4 text-center">
+            <div class="ui-card p-4">
                 <p class="text-xs text-slate-500">Saldo</p>
-                <p class="mt-1 font-display text-lg font-semibold text-teal-950">{{ number_format($saldo, 0, ',', '.') }}</p>
+                <p class="mt-1 font-display text-2xl font-semibold text-teal-950">{{ number_format($saldo, 0, ',', '.') }}</p>
             </div>
         </div>
+
+        <div class="grid items-start gap-5 lg:grid-cols-2">
 
         <form method="POST" action="{{ route('ketua.finance.spp-amount') }}" class="ui-card p-5 grid gap-4">
             @csrf
             @method('PUT')
             <div>
                 <p class="font-semibold text-teal-950">Pengaturan SPP</p>
-                <p class="mt-1 text-sm text-slate-500">Biaya bulanan & tanggal jatuh tempo untuk semua santri aktif.</p>
             </div>
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -39,7 +39,6 @@
                 <div>
                     <x-input-label for="spp_due_day" value="Jatuh tempo (tanggal)" />
                     <x-text-input id="spp_due_day" name="spp_due_day" type="number" min="1" max="28" class="mt-1.5" :value="old('spp_due_day', $sppDueDay)" required />
-                    <p class="mt-1 text-xs text-slate-500">Contoh: 10 = harus lunas sebelum tanggal 11 tiap bulan.</p>
                     <x-input-error class="mt-2" :messages="$errors->get('spp_due_day')" />
                 </div>
             </div>
@@ -49,7 +48,6 @@
         <form method="POST" action="{{ route('ketua.finance.store') }}" class="ui-card p-5 grid gap-4">
             @csrf
             <p class="font-semibold text-teal-950">Catat pemasukan / pengeluaran</p>
-            <p class="text-sm text-slate-500">Misalnya setoran SPP dari ketua pengajar, infak, atau biaya operasional.</p>
             <div>
                 <x-input-label for="type" value="Jenis" />
                 <select id="type" name="type" class="ui-select mt-1.5" required>
@@ -76,8 +74,10 @@
             </div>
             <x-primary-button>Simpan</x-primary-button>
         </form>
+        </div>
 
-        <div class="flex gap-2">
+        <div class="space-y-3">
+        <div class="flex flex-wrap gap-2">
             <a href="{{ route('ketua.finance.index') }}" class="ui-filter-chip {{ ! $filterType ? 'is-active' : '' }}">Semua</a>
             @foreach ($types as $type)
                 <a href="{{ route('ketua.finance.index', ['type' => $type->value]) }}" class="ui-filter-chip {{ $filterType === $type->value ? 'is-active' : '' }}">{{ $type->label() }}</a>
@@ -87,11 +87,11 @@
         <div class="space-y-2">
             @forelse ($entries as $entry)
                 <div class="ui-card flex items-start justify-between gap-3 p-4">
-                    <div>
+                    <div class="min-w-0">
                         <p class="font-medium text-teal-950">{{ $entry->category ?: $entry->source->label() }}</p>
                         <p class="text-xs text-slate-500">{{ $entry->entry_date->format('d/m/Y') }} · {{ $entry->note }}</p>
                     </div>
-                    <p class="font-semibold {{ $entry->type === \App\Enums\FinanceType::Pemasukan ? 'text-teal-800' : 'text-rose-800' }}">
+                    <p class="shrink-0 font-semibold {{ $entry->type === \App\Enums\FinanceType::Pemasukan ? 'text-teal-800' : 'text-rose-800' }}">
                         {{ $entry->type === \App\Enums\FinanceType::Pemasukan ? '+' : '-' }}{{ number_format($entry->amount, 0, ',', '.') }}
                     </p>
                 </div>
@@ -101,5 +101,6 @@
         </div>
 
         {{ $entries->links() }}
+        </div>
     </div>
 </x-app-layout>

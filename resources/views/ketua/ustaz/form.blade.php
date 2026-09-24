@@ -46,7 +46,6 @@
         <div>
             <x-input-label for="nip" value="Nomor induk pengajar (NIP)" />
             <x-text-input id="nip" name="nip" class="mt-1.5" :value="old('nip', $ustaz?->nip)" required />
-            <p class="mt-1 text-xs text-slate-500">Diisi manual Ketua DKM · harus unik.</p>
             <x-input-error class="mt-2" :messages="$errors->get('nip')" />
         </div>
 

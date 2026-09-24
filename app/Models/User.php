@@ -19,6 +19,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable([
     'name',
+    'place_name',
     'username',
     'nip',
     'email',

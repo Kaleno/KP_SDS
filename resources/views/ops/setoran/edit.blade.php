@@ -7,7 +7,7 @@
         </div>
     </x-slot>
 
-    <div class="max-w-lg">
+    <div class="w-full max-w-xl">
         <form method="POST" action="{{ route('ops.setoran.update', $setoran) }}" class="ui-card space-y-4 p-5"
               x-data="{
                   category: {{ \Illuminate\Support\Js::from($defaultCategory) }},

@@ -4,7 +4,6 @@
             <div>
                 <p class="ui-section-title">Pembelajaran</p>
                 <h1 class="font-display text-2xl font-semibold text-teal-950">{{ isset($halaqah) ? 'Ubah kelas' : 'Buat kelas' }}</h1>
-                <p class="text-sm text-slate-500">Pilih hari, jam, dan pengajar. Semua santri aktif ikut otomatis.</p>
             </div>
             <a href="{{ route('ketua.halaqah.index') }}" class="btn-secondary">Kembali</a>
         </div>

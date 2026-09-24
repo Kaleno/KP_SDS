@@ -4,7 +4,6 @@
             <div>
                 <p class="ui-section-title">Pembelajaran</p>
                 <h1 class="font-display text-2xl font-semibold text-teal-950">Kelas</h1>
-                <p class="text-sm text-slate-500">Jadwal dan pengajar. Santri aktif otomatis ikut.</p>
             </div>
             <a href="{{ route('ketua.halaqah.create') }}" class="btn-primary">
                 <x-icon name="plus" class="h-4 w-4" /> Buat kelas
@@ -12,7 +11,7 @@
         </div>
     </x-slot>
 
-    <div class="max-w-5xl">
+    <div class="ui-page">
         <div class="ui-table-wrap">
             <div class="overflow-x-auto">
                 <table class="ui-table ui-table-stack">
@@ -39,7 +38,7 @@
                                     @endif
                                 </td>
                                 <td data-label="Santri">{{ $item->active_members_count }}</td>
-                                <td data-label="">
+                                <td data-label="" class="ui-table-actions">
                                     <a href="{{ route('ketua.halaqah.edit', $item) }}" class="ui-link">Ubah</a>
                                 </td>
                             </tr>

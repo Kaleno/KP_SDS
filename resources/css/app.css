@@ -66,9 +66,14 @@
         @apply w-full min-h-12;
     }
 
-    .ui-input {
+    .ui-input,
+    .ui-select {
         @apply block w-full rounded-xl border-slate-200 bg-white/80 text-base text-slate-800 shadow-none placeholder:text-slate-400
             focus:border-teal-600 focus:ring-4 focus:ring-teal-700/10 min-h-12;
+    }
+
+    .ui-page {
+        @apply w-full max-w-6xl space-y-5;
     }
 
     .ui-password {
@@ -189,9 +194,27 @@
         @apply bg-sky-50 text-sky-800;
     }
 
+    .ui-filter-chip.is-active {
+        @apply bg-teal-800 text-white hover:bg-teal-900 hover:text-white;
+    }
+
     .ui-choice {
         @apply flex cursor-pointer items-center justify-center min-h-12 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 transition
             hover:border-teal-300 hover:bg-teal-50/60;
+    }
+
+    .ui-choice.ui-choice-compact {
+        min-height: 2.5rem;
+        padding-inline: 0.25rem;
+        font-size: 0.75rem;
+        line-height: 1.15;
+    }
+
+    @media (min-width: 640px) {
+        .ui-choice.ui-choice-compact {
+            min-height: 2.75rem;
+            font-size: 0.875rem;
+        }
     }
 
     .attendance-picks {
@@ -313,12 +336,31 @@ textarea {
         @apply flex items-start justify-between gap-4 px-4 py-1.5;
     }
 
+    .ui-table-value {
+        min-width: 0;
+        text-align: right;
+    }
+
     .ui-table-stack td::before {
         content: attr(data-label);
         @apply shrink-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400;
     }
 
-    .ui-table-stack td:last-child {
-        @apply justify-end pt-2;
+    .ui-table-stack td.ui-table-actions {
+        @apply flex-wrap items-center justify-end gap-2 pt-3;
+    }
+
+    .ui-table-stack td.ui-table-actions::before {
+        content: none;
+    }
+
+    .ui-table-stack td.ui-table-actions > * {
+        display: flex;
+        width: 100%;
+        max-width: 100%;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.25rem;
     }
 }

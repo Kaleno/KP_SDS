@@ -23,12 +23,22 @@ class KetuaAccountController extends Controller
         ]);
     }
 
+    public function create(): View
+    {
+        return view('super-admin.ketua.create');
+    }
+
     public function store(StoreKetuaRequest $request): RedirectResponse
     {
         $ketua = User::query()->create([
-            'name' => $request->string('name')->toString(),
-            'username' => $request->string('username')->toString(),
-            'email' => $request->string('email')->toString(),
+            ...$request->safe()->only([
+                'name',
+                'place_name',
+                'address',
+                'phone',
+                'username',
+                'email',
+            ]),
             'password' => $request->string('password')->toString(),
             'is_active' => true,
         ]);

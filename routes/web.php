@@ -16,9 +16,14 @@ use App\Http\Controllers\Portal\MonitorController;
 use App\Http\Controllers\Portal\ProfileController as PortalProfileController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\SantriRegistrationController as PublicSantriRegistrationController;
+use App\Http\Controllers\PwaManifestController;
+use App\Http\Controllers\PwaServiceWorkerController;
 use App\Http\Controllers\SuperAdmin\KetuaAccountController;
 use App\Support\Role;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/manifest.webmanifest', PwaManifestController::class)->name('pwa.manifest');
+Route::get('/sw.js', PwaServiceWorkerController::class)->name('pwa.service-worker');
 
 Route::get('/', function () {
     return auth()->check()
@@ -28,7 +33,9 @@ Route::get('/', function () {
 
 Route::middleware('guest')->group(function () {
     Route::get('/daftar', [PublicSantriRegistrationController::class, 'create'])->name('daftar.create');
-    Route::post('/daftar', [PublicSantriRegistrationController::class, 'store'])->name('daftar.store');
+    Route::post('/daftar', [PublicSantriRegistrationController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('daftar.store');
 });
 
 Route::middleware(['auth', 'active'])->group(function () {
@@ -40,6 +47,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::middleware('role:'.Role::SuperAdmin)->prefix('super-admin')->name('super-admin.')->group(function () {
         Route::get('/ketua', [KetuaAccountController::class, 'index'])->name('ketua.index');
+        Route::get('/ketua/create', [KetuaAccountController::class, 'create'])->name('ketua.create');
         Route::post('/ketua', [KetuaAccountController::class, 'store'])->name('ketua.store');
         Route::patch('/ketua/{ketua}/toggle', [KetuaAccountController::class, 'toggle'])->name('ketua.toggle');
     });

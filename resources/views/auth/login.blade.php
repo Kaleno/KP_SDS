@@ -4,7 +4,6 @@
     <div class="mb-6 hidden lg:block">
         <p class="ui-section-title">Masuk akun</p>
         <h2 class="mt-1 font-display text-2xl text-teal-950">Selamat datang kembali</h2>
-        <p class="mt-1 text-sm text-slate-500">Gunakan username atau email yang diberikan Ketua.</p>
     </div>
 
     <form method="POST" action="{{ route('login') }}" class="space-y-4">

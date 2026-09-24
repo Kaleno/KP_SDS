@@ -4,13 +4,12 @@
             <p class="ui-section-title">Pembayaran</p>
             <h1 class="font-display text-2xl font-semibold text-teal-950">SPP & tunggakan</h1>
             <p class="text-sm text-slate-500">
-                Rp {{ number_format($amount, 0, ',', '.') }}/bulan · jatuh tempo tanggal {{ $dueDay }}.
-                Catatan pembayaran di sini tidak masuk otomatis ke kas DKM.
+                Rp {{ number_format($amount, 0, ',', '.') }}/bulan · jatuh tempo tanggal {{ $dueDay }}
             </p>
         </div>
     </x-slot>
 
-    <div class="max-w-5xl space-y-5">
+    <div class="ui-page">
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div class="ui-card p-4">
                 <p class="text-xs text-slate-500">Lunas bulan ini</p>
@@ -28,7 +27,7 @@
                 @endif
             </div>
             <a href="{{ route('ops.spp.index', ['year' => $year, 'month' => $month, 'filter' => 'nunggak']) }}"
-               class="ui-card p-4 {{ $filter === 'nunggak' ? 'ring-2 ring-rose-300' : '' }}">
+               class="ui-card col-span-2 p-4 sm:col-span-1 {{ $filter === 'nunggak' ? 'ring-2 ring-rose-300' : '' }}">
                 <p class="text-xs text-slate-500">Nunggak &gt;1 bulan</p>
                 <p class="mt-1 font-display text-2xl font-semibold {{ $summary['deepArrears'] > 0 ? 'text-rose-800' : 'text-teal-950' }}">
                     {{ $summary['deepArrears'] }}

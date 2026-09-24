@@ -26,14 +26,11 @@
         </button>
     </div>
 @elseif ($attributes->get('type') === 'date')
-    <div {{ $attributes->only('class')->merge(['class' => 'space-y-1']) }}>
-        <input
-            @disabled($disabled)
-            lang="id"
-            {{ $attributes->except('class')->merge(['class' => 'ui-input']) }}
-        >
-        <p class="text-xs text-slate-500">Tampilan kalender mengikuti perangkat · nilai tersimpan YYYY-MM-DD</p>
-    </div>
+    <input
+        @disabled($disabled)
+        lang="id"
+        {{ $attributes->merge(['class' => 'ui-input']) }}
+    >
 @else
     <input @disabled($disabled) {{ $attributes->merge(['class' => 'ui-input']) }}>
 @endif

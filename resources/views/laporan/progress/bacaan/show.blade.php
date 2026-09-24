@@ -7,7 +7,7 @@
         </div>
     </x-slot>
 
-    <div class="max-w-2xl space-y-4">
+    <div class="w-full max-w-3xl space-y-4">
         <div class="flex gap-2">
             <a href="{{ route('laporan.progress.bacaan.show', $santri) }}" class="btn-primary min-h-10 px-4 text-sm">Bacaan</a>
             <a href="{{ route('laporan.progress.hafalan.show', $santri) }}" class="btn-secondary min-h-10 px-4 text-sm">Hafalan</a>

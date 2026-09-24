@@ -134,7 +134,6 @@ class OperasionalTest extends TestCase
             ->assertSee('Santri aktif')
             ->assertSee('Hafalan')
             ->assertSee('Bacaan')
-            ->assertSee('patokan hitungan')
             ->assertSee('3 belum')
             ->assertSee('Hari ini')
             ->assertSee('name="date_from"', false)

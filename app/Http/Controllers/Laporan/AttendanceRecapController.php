@@ -33,7 +33,8 @@ class AttendanceRecapController extends Controller
             ->selectRaw("SUM(CASE WHEN status = 'alfa' THEN 1 ELSE 0 END) as alfa")
             ->whereHas('session', function ($query) use ($from, $to): void {
                 $query->whereDate('session_date', '>=', $from)
-                    ->whereDate('session_date', '<=', $to);
+                    ->whereDate('session_date', '<=', $to)
+                    ->whereNotNull('submitted_at');
             })
             ->whereIn('santri_id', $this->access->activeSantriIds($user))
             ->groupBy('santri_id')

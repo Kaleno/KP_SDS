@@ -80,6 +80,8 @@ class AttendanceSessionService
                         'note' => $row['note'] ?? null,
                     ]);
             }
+
+            $session->forceFill(['submitted_at' => now()])->save();
         });
     }
 }

@@ -5,17 +5,13 @@
             <h1 class="font-display text-2xl font-semibold text-teal-950">
                 {{ ($session ?? null) ? 'Setor santri hadir' : 'Input setoran' }}
             </h1>
-            <p class="text-sm text-slate-500">
-                @if ($session ?? null)
-                    {{ \App\Support\DateLabel::long($session->session_date) }}
-                @else
-                    Bacaan atau hafalan — pilih jenis lalu isi detail
-                @endif
-            </p>
+            @if ($session ?? null)
+                <p class="text-sm text-slate-500">{{ \App\Support\DateLabel::long($session->session_date) }}</p>
+            @endif
         </div>
     </x-slot>
 
-    <div class="max-w-lg">
+    <div class="w-full max-w-xl">
         @if ($members->isEmpty())
             @if ($session ?? null)
                 <x-empty>Belum ada santri berstatus hadir di sesi ini.</x-empty>

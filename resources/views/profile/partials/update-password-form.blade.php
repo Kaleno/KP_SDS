@@ -1,7 +1,6 @@
 <section>
     <header>
         <h2 class="font-display text-lg font-semibold text-teal-950">Ubah kata sandi</h2>
-        <p class="mt-1 text-sm text-slate-500">Gunakan kata sandi yang panjang dan tidak mudah ditebak.</p>
     </header>
 
     <form method="post" action="{{ route('password.update') }}" class="mt-6 space-y-5">

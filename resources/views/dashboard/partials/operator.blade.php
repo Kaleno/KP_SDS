@@ -3,6 +3,7 @@
     $pendingCount = $overview['pendingSetoran']->count();
     $followUpCount = $overview['followUpSetoran']->count();
     $todaySession = $overview['todaySession'] ?? null;
+    $attendancePending = $todaySession && ! ($overview['attendanceRecorded'] ?? false);
 @endphp
 
 {{-- 1. Absensi hari ini (aksi utama) --}}
@@ -23,7 +24,6 @@
                         <p class="font-display text-lg font-semibold text-teal-950">{{ $todayDateLabel }}</p>
                         <x-badge tone="ok">Sesi terbuka</x-badge>
                     </div>
-                    <p class="text-sm text-slate-500">Semua santri aktif · Senin–Jumat</p>
                 </div>
                 <a href="{{ route('ops.attendance.show', $todaySession) }}" class="btn-primary min-h-11">Isi absensi</a>
             </div>
@@ -44,16 +44,18 @@
         <x-empty>Tidak ada alfa, setoran ulang, atau santri yang belum setor hari ini.</x-empty>
     @else
         @if ($overview['alfaToday']->isNotEmpty())
-            <div class="ui-card space-y-3 p-4">
-                <p class="text-sm font-semibold text-rose-800">Alfa hari ini · {{ $overview['alfaToday']->count() }}</p>
+            <div class="ui-card p-4">
+                <p class="text-sm font-semibold text-rose-800">Alfa hari ini · {{ $stats['alfaHariIni'] }}</p>
+                <div class="mt-3 max-h-64 space-y-3 overflow-y-auto">
                 @foreach ($overview['alfaToday'] as $row)
                     <div class="flex items-start justify-between gap-3">
                         <div>
                             <p class="font-medium text-teal-950">{{ $row->santri->user->name }}</p>
-                        </div>
-                        <x-badge tone="danger">Alfa</x-badge>
+                    </div>
+                    <x-badge tone="danger">Alfa</x-badge>
                     </div>
                 @endforeach
+                </div>
             </div>
         @endif
 
@@ -117,17 +119,21 @@
             <p class="mt-1 text-xs text-amber-700">{{ $followUpCount }} perlu diulang</p>
         @endif
     </div>
-    <div class="stat-card border-rose-100 bg-rose-50/70">
-        <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-rose-700"><x-icon name="clipboard" /></span>
-        <p class="mt-4 font-display text-3xl font-semibold text-rose-800">{{ $stats['alfaHariIni'] }}</p>
-        <p class="text-sm text-rose-700">Alfa hari ini</p>
-        <p class="mt-1 text-xs text-rose-600/80">{{ $stats['hadirHariIni'] }} hadir · {{ $stats['izinHariIni'] }} izin · {{ $stats['sakitHariIni'] }} sakit</p>
+    <div class="stat-card {{ $attendancePending ? '' : 'border-rose-100 bg-rose-50/70' }}">
+        <span class="flex h-10 w-10 items-center justify-center rounded-2xl {{ $attendancePending ? 'bg-slate-100 text-slate-500' : 'bg-white text-rose-700' }}"><x-icon name="clipboard" /></span>
+        @if ($attendancePending)
+            <p class="mt-4 font-display text-3xl font-semibold text-slate-400">—</p>
+            <p class="text-sm text-slate-500">Belum diisi</p>
+        @else
+            <p class="mt-4 font-display text-3xl font-semibold text-rose-800">{{ $stats['alfaHariIni'] }}</p>
+            <p class="text-sm text-rose-700">Alfa hari ini</p>
+            <p class="mt-1 text-xs text-rose-600/80">{{ $stats['hadirHariIni'] }} hadir · {{ $stats['izinHariIni'] }} izin · {{ $stats['sakitHariIni'] }} sakit</p>
+        @endif
     </div>
     <div class="stat-card">
         <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-50 text-teal-800"><x-icon name="calendar" /></span>
         <p class="mt-4 font-display text-3xl font-semibold text-teal-950">{{ $stats['sesiHariIni'] }}</p>
         <p class="text-sm text-slate-500">Sesi hari ini</p>
-        <p class="mt-1 text-xs text-slate-400">satu sesi global / hari</p>
     </div>
 </div>
 

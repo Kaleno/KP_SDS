@@ -4,7 +4,6 @@
     <div class="mb-6">
         <p class="ui-section-title">Pendaftaran</p>
         <h2 class="mt-1 font-display text-2xl text-teal-950">Daftar santri baru</h2>
-        <p class="mt-1 text-sm text-slate-500">Isi data di bawah. Persetujuan masuk ke Ketua DKM.</p>
     </div>
 
     <form method="POST" action="{{ route('daftar.store') }}" enctype="multipart/form-data" class="space-y-4">

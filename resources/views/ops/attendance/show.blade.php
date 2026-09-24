@@ -6,7 +6,7 @@
         </div>
     </x-slot>
 
-    <div class="max-w-3xl">
+    <div class="w-full max-w-5xl">
         @if ($session->attendances->isEmpty())
             <x-empty>
                 Belum ada santri aktif. Minta Ketua menambahkan santri.
