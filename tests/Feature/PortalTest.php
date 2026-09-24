@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Enums\AttendanceStatus;
 use App\Enums\Gender;
 use App\Enums\SantriStatus;
+use App\Enums\SantriTrack;
+use App\Enums\SchoolLevel;
 use App\Enums\SetoranStatus;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
@@ -99,6 +101,58 @@ class PortalTest extends TestCase
             ->assertDontSee('Peta 30 juz')
             ->assertDontSee('Input setoran')
             ->assertDontSee('Simpan setoran');
+    }
+
+    public function test_portal_shows_current_profile_fields(): void
+    {
+        $fx = $this->portalFixture();
+        $santri = $fx['santri'][0];
+        $santri->user->update(['phone' => '081234567890']);
+        $santri->update([
+            'parent_name' => 'Bapak Fauzi',
+            'address' => 'Jl. Masjid No. 1',
+            'school_level' => SchoolLevel::Sd,
+            'track' => SantriTrack::Iqro,
+            'iqro_level' => 2,
+            'birth_date' => '2012-01-15',
+            'joined_at' => '2026-01-01',
+            'status' => SantriStatus::Aktif,
+        ]);
+
+        $this->actingAs($santri->user)
+            ->get(route('portal.home'))
+            ->assertOk()
+            ->assertSee('Data diri')
+            ->assertSee('Aktif belajar')
+            ->assertSee('Laki-laki')
+            ->assertSee('15 Januari 2012')
+            ->assertSee('SD')
+            ->assertSee('Iqro')
+            ->assertSee('Jilid 2')
+            ->assertSee('Bapak Fauzi')
+            ->assertSee('081234567890')
+            ->assertSee('Jl. Masjid No. 1')
+            ->assertSee('1 Januari 2026')
+            ->assertSee('0 tahun 8 bulan 22 hari')
+            ->assertDontSee('Jadwal');
+    }
+
+    public function test_graduated_santri_still_sees_graduation_date(): void
+    {
+        $fx = $this->portalFixture();
+        $santri = $fx['santri'][0];
+        $santri->update([
+            'status' => SantriStatus::Lulus,
+            'joined_at' => '2024-01-01',
+            'graduated_at' => '2026-06-01',
+        ]);
+
+        $this->actingAs($santri->user)
+            ->get(route('portal.home'))
+            ->assertOk()
+            ->assertSee('Lulus')
+            ->assertSee('1 Juni 2026')
+            ->assertSee('2 tahun 5 bulan 0 hari');
     }
 
     /**

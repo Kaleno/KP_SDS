@@ -53,12 +53,16 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('ustaz/{ustaz}/edit', [UstazController::class, 'edit'])->name('ustaz.edit');
         Route::put('ustaz/{ustaz}', [UstazController::class, 'update'])->name('ustaz.update');
         Route::patch('ustaz/{ustaz}/toggle', [UstazController::class, 'toggle'])->name('ustaz.toggle');
+        Route::patch('ustaz/{ustaz}/reset-password', [UstazController::class, 'resetPassword'])->name('ustaz.reset-password');
+        Route::delete('ustaz/{ustaz}', [UstazController::class, 'destroy'])->name('ustaz.destroy');
 
         Route::get('santri', [SantriController::class, 'index'])->name('santri.index');
         Route::get('santri/create', [SantriController::class, 'create'])->name('santri.create');
         Route::post('santri', [SantriController::class, 'store'])->name('santri.store');
         Route::get('santri/{santri}/edit', [SantriController::class, 'edit'])->name('santri.edit');
         Route::put('santri/{santri}', [SantriController::class, 'update'])->name('santri.update');
+        Route::patch('santri/{santri}/reset-password', [SantriController::class, 'resetPassword'])->name('santri.reset-password');
+        Route::delete('santri/{santri}', [SantriController::class, 'destroy'])->name('santri.destroy');
 
         Route::get('pendaftaran', [KetuaSantriRegistrationController::class, 'index'])->name('registrations.index');
         Route::get('pendaftaran/{registration}', [KetuaSantriRegistrationController::class, 'show'])->name('registrations.show');

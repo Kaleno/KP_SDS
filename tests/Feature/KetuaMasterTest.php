@@ -48,9 +48,11 @@ class KetuaMasterTest extends TestCase
         $this->actingAs($ketua)->post(route('ketua.ustaz.store'), [
             'teaching_role' => Role::KetuaPengajar,
             'name' => 'Ketua Pengajar Satu',
+            'nip' => 'NIP-KP1',
             'username' => 'kp1',
             'email' => null,
             'phone' => null,
+            'is_active' => '1',
             'password' => 'password',
             'password_confirmation' => 'password',
         ])->assertRedirect(route('ketua.ustaz.index'));
@@ -58,9 +60,11 @@ class KetuaMasterTest extends TestCase
         $this->actingAs($ketua)->post(route('ketua.ustaz.store'), [
             'teaching_role' => Role::Pengajar,
             'name' => 'Pengajar Dua',
+            'nip' => 'NIP-PJR1',
             'username' => 'pjr1',
             'email' => null,
             'phone' => null,
+            'is_active' => '1',
             'password' => 'password',
             'password_confirmation' => 'password',
         ])->assertRedirect(route('ketua.ustaz.index'));

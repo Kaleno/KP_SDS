@@ -39,7 +39,9 @@
                     Menu operasional harian tidak tersedia di role ini.
                 </p>
             </x-card>
-        @elseif ($isKetua || $isUstaz)
+        @elseif ($isKetua)
+            @include('dashboard.partials.ketua')
+        @elseif ($isUstaz)
             @include('dashboard.partials.operator')
         @else
             <x-card>

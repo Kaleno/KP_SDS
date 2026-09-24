@@ -11,11 +11,22 @@
         $action = $santri ? route('ketua.santri.update', $santri) : route('ketua.santri.store');
     @endphp
 
-    <form method="POST" action="{{ $action }}" class="max-w-xl ui-card p-5 sm:p-6 grid gap-4">
+    <form method="POST" action="{{ $action }}" enctype="multipart/form-data" class="max-w-xl ui-card p-5 sm:p-6 grid gap-4">
         @csrf
         @if ($santri)
             @method('PUT')
         @endif
+
+        <div>
+            <x-input-label for="photo" value="Foto profil" />
+            @if ($santri?->photoUrl())
+                <img src="{{ $santri->photoUrl() }}" alt="" class="mt-1.5 mb-2 h-20 w-20 rounded-full object-cover">
+            @endif
+            <input id="photo" name="photo" type="file" accept="image/*" capture="user" class="mt-1.5 block w-full text-sm text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-teal-50 file:px-4 file:py-2 file:font-semibold file:text-teal-800" />
+            <p class="mt-1 text-xs text-slate-500">JPG/PNG/WebP, maks. 2 MB.</p>
+            <x-input-error class="mt-2" :messages="$errors->get('photo')" />
+        </div>
+
         <div>
             <x-input-label for="name" value="Nama" />
             <x-text-input id="name" name="name" class="mt-1.5" :value="old('name', $santri?->user->name)" required />
@@ -39,9 +50,14 @@
             <x-text-input id="birth_date" name="birth_date" type="date" class="mt-1.5" :value="old('birth_date', $santri?->birth_date?->format('Y-m-d'))" />
         </div>
         <div>
-            <x-input-label for="parent_name" value="Nama orang tua" />
+            <x-input-label for="parent_name" value="Nama orang tua / wali" />
             <x-text-input id="parent_name" name="parent_name" class="mt-1.5" :value="old('parent_name', $santri?->parent_name)" />
             <x-input-error class="mt-2" :messages="$errors->get('parent_name')" />
+        </div>
+        <div>
+            <x-input-label for="address" value="Alamat" />
+            <textarea id="address" name="address" rows="3" class="ui-input mt-1.5">{{ old('address', $santri?->address) }}</textarea>
+            <x-input-error class="mt-2" :messages="$errors->get('address')" />
         </div>
         <div>
             <x-input-label for="school_level" value="Sekolah" />
@@ -67,6 +83,7 @@
                     <option value="{{ $status->value }}" @selected(old('status', $santri?->status->value ?? 'aktif') === $status->value)>{{ $status->label() }}</option>
                 @endforeach
             </select>
+            <p class="mt-1 text-xs text-slate-500">Cuti & keluar tidak bisa login. Lulus tetap bisa masuk portal.</p>
         </div>
         <div>
             <x-input-label for="email" value="Email (opsional)" />

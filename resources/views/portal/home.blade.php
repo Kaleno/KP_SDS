@@ -9,7 +9,7 @@
         </div>
     </x-slot>
 
-    <div class="max-w-2xl space-y-5">
+    <div class="max-w-3xl space-y-5">
         @unless ($santri)
             <x-empty>Profil santri belum tersedia. Hubungi Ketua DKM.</x-empty>
         @else
@@ -18,11 +18,13 @@
                 $bacaanSnap = $bacaan['alquran'] ?? null;
                 $currentJuz = $bacaanSnap?->juz ?? $progress?->currentJuz();
                 $todayAttendance = $snapshot['todayAttendance'] ?? null;
-                $todaySlots = $snapshot['todaySlots'] ?? collect();
                 $todaySetoran = $snapshot['todaySetoran'] ?? collect();
                 $needsFollowUp = $snapshot['needsFollowUp'] ?? null;
                 $attendanceCounts = $snapshot['attendanceCounts'] ?? [];
                 $attendanceTotal = $snapshot['attendanceTotal'] ?? 0;
+                $membershipLabel = $membership['label'] ?? '—';
+                $trackLabel = $santri->track?->label();
+                $schoolLabel = $santri->school_level?->label();
                 $dateLabel = function ($date): string {
                     $value = $date->toDateString();
                     if ($value === now()->toDateString()) {
@@ -38,14 +40,35 @@
 
             <div class="relative overflow-hidden rounded-3xl bg-teal-950 p-6 text-white shadow-lift">
                 <div class="pointer-events-none absolute -right-6 top-0 h-32 w-32 rounded-full bg-gold-400/20 blur-2xl"></div>
-                <p class="text-[11px] uppercase tracking-[0.2em] text-gold-300">Assalamu'alaikum</p>
-                <p class="mt-2 font-display text-2xl font-semibold text-balance">
-                    {{ $santri->user->name }}
-                </p>
-                <p class="mt-1 text-sm text-teal-100/80">
-                    NIS {{ $santri->nis }}
-                </p>
-                <p class="mt-3 text-sm text-teal-100/75">
+                <div class="flex items-start gap-4">
+                    @if ($santri->photoUrl())
+                        <img src="{{ $santri->photoUrl() }}" alt="" class="h-16 w-16 shrink-0 rounded-2xl object-cover ring-2 ring-white/20">
+                    @else
+                        <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/10 font-display text-2xl font-semibold text-gold-300">
+                            {{ mb_substr($santri->user->name, 0, 1) }}
+                        </div>
+                    @endif
+                    <div class="min-w-0">
+                        <p class="text-[11px] uppercase tracking-[0.2em] text-gold-300">Assalamu'alaikum</p>
+                        <p class="mt-1 font-display text-2xl font-semibold text-balance">
+                            {{ $santri->user->name }}
+                        </p>
+                        <p class="mt-1 text-sm text-teal-100/80">
+                            NIS {{ $santri->nis }}
+                            @if ($trackLabel)
+                                · {{ $trackLabel }}
+                            @endif
+                            @if ($schoolLabel)
+                                · {{ $schoolLabel }}
+                            @endif
+                        </p>
+                        <div class="mt-3">
+                            <x-badge :tone="$santri->status->badgeTone()">{{ $santri->status->label() }}</x-badge>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="mt-4 text-sm text-teal-100/75">
                     Catatan bacaan, hafalan, dan kehadiranmu dari pengajar.
                     Anda hanya melihat, tidak mengubah data.
                 </p>
@@ -96,54 +119,69 @@
                 @endif
             </div>
 
-            <section class="ui-card p-5 space-y-3">
-                <div class="flex items-center justify-between gap-3">
-                    <h2 class="ui-section-title">Info pembayaran</h2>
-                    <p class="text-xs text-slate-400">Rp {{ number_format($sppAmount ?? \App\Support\AppSettings::DefaultSppMonthlyAmount, 0, ',', '.') }}/bln</p>
+            <section id="data-diri" class="scroll-mt-24 space-y-3">
+                <div class="flex items-end justify-between gap-3 px-1">
+                    <h2 class="ui-section-title">Data diri</h2>
+                    <a href="{{ route('portal.profile.edit') }}" class="text-sm font-semibold text-teal-800">Ubah</a>
                 </div>
-                @if (($unpaidMonths ?? 0) > 1)
-                    <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-                        Nunggak {{ $unpaidMonths }} bulan · Rp {{ number_format($unpaidMonths * ($sppAmount ?? 0), 0, ',', '.') }}
-                    </div>
-                @elseif (($unpaidMonths ?? 0) === 1)
-                    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                        Belum lunas 1 bulan
-                    </div>
-                @endif
-                @if ($currentPayment ?? null)
-                    <div class="flex items-center justify-between gap-3 rounded-2xl bg-cream-100 px-4 py-3">
+                <div class="ui-card p-5">
+                    <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <p class="font-semibold text-teal-950">{{ $currentPayment['label'] }}</p>
-                            <p class="text-xs text-slate-500">Status bulan ini</p>
+                            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Gender</dt>
+                            <dd class="mt-1 text-sm text-slate-800">{{ $santri->gender?->label() ?? '—' }}</dd>
                         </div>
-                        <x-badge :tone="$currentPayment['paid'] ? 'ok' : 'warn'">
-                            {{ $currentPayment['paid'] ? 'Lunas' : 'Belum bayar' }}
-                        </x-badge>
-                    </div>
-                @endif
-                <div class="space-y-2">
-                    @foreach ($payments ?? [] as $row)
-                        <div class="flex items-center justify-between gap-3 text-sm">
-                            <span class="text-slate-600">{{ $row['label'] }}</span>
-                            @if (! ($row['obligated'] ?? true))
-                                <span class="text-slate-400">—</span>
-                            @else
-                                <span class="font-semibold {{ $row['paid'] ? 'text-teal-800' : 'text-amber-700' }}">
-                                    {{ $row['paid'] ? 'Lunas' : 'Belum' }}
-                                </span>
-                            @endif
+                        <div>
+                            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Tanggal lahir</dt>
+                            <dd class="mt-1 text-sm text-slate-800">{{ $santri->birth_date ? \App\Support\DateLabel::dayMonthYear($santri->birth_date) : '—' }}</dd>
                         </div>
-                    @endforeach
+                        <div>
+                            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Sekolah</dt>
+                            <dd class="mt-1 text-sm text-slate-800">{{ $schoolLabel ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Jalur mengaji</dt>
+                            <dd class="mt-1 text-sm text-slate-800">
+                                {{ $trackLabel ?? '—' }}
+                                @if ($santri->track === \App\Enums\SantriTrack::Iqro && $santri->iqro_level)
+                                    · Jilid {{ $santri->iqro_level }}
+                                @endif
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Wali</dt>
+                            <dd class="mt-1 text-sm text-slate-800">{{ $santri->parent_name ?: '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Telepon</dt>
+                            <dd class="mt-1 text-sm text-slate-800">{{ $santri->user->phone ?: '—' }}</dd>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Alamat</dt>
+                            <dd class="mt-1 text-sm text-slate-800 whitespace-pre-line">{{ $santri->address ?: '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Bergabung</dt>
+                            <dd class="mt-1 text-sm text-slate-800">{{ $santri->joined_at ? \App\Support\DateLabel::dayMonthYear($santri->joined_at) : '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Durasi</dt>
+                            <dd class="mt-1 text-sm text-slate-800">{{ $membershipLabel }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Lulus</dt>
+                            <dd class="mt-1 text-sm text-slate-800">{{ $santri->graduated_at ? \App\Support\DateLabel::dayMonthYear($santri->graduated_at) : '—' }}</dd>
+                        </div>
+                    </dl>
                 </div>
             </section>
 
             @if ($snapshot)
                 <nav class="flex gap-2 overflow-x-auto pb-1" aria-label="Bagian halaman">
                     <a href="#hari-ini" class="shrink-0 rounded-full bg-white px-3 py-2 text-xs font-semibold text-teal-800 shadow-soft">Hari ini</a>
-                    <a href="#hafalan" class="shrink-0 rounded-full bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-soft">Hafalan</a>
+                    <a href="#progress" class="shrink-0 rounded-full bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-soft">Progress</a>
+                    <a href="#pembayaran" class="shrink-0 rounded-full bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-soft">Pembayaran</a>
                     <a href="#setoran" class="shrink-0 rounded-full bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-soft">Setoran</a>
                     <a href="#absensi" class="shrink-0 rounded-full bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-soft">Absensi</a>
-                    <a href="#jadwal" class="shrink-0 rounded-full bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-soft">Jadwal</a>
                 </nav>
 
                 <section id="hari-ini" class="scroll-mt-24 space-y-3">
@@ -179,7 +217,7 @@
                         </div>
                     @endif
 
-                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div class="ui-card p-4">
                             <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Kehadiran</p>
                             @if ($todayAttendance)
@@ -199,11 +237,6 @@
                                 <p class="mt-2 font-display text-xl font-semibold text-slate-700">Belum ada</p>
                                 <p class="mt-1 text-xs text-slate-500">Belum ada setoran tercatat hari ini</p>
                             @endif
-                        </div>
-                        <div class="ui-card p-4">
-                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Hari ini</p>
-                            <p class="mt-2 font-display text-xl font-semibold text-teal-950">{{ $snapshot['dayLabel'] ?? '' }}</p>
-                            <p class="mt-1 text-xs text-slate-500">{{ \App\Support\DateLabel::long(now()) }}</p>
                         </div>
                     </div>
                 </section>
@@ -258,8 +291,51 @@
                     @endif
                 </section>
             @else
-                <x-empty>Belum ada progress bacaan/hafalan.</x-empty>
+                <section id="progress" class="scroll-mt-24">
+                    <x-empty>Belum ada progress bacaan/hafalan.</x-empty>
+                </section>
             @endif
+
+            <section id="pembayaran" class="ui-card scroll-mt-24 space-y-3 p-5">
+                <div class="flex items-center justify-between gap-3">
+                    <h2 class="ui-section-title">Info pembayaran</h2>
+                    <p class="text-xs text-slate-400">Rp {{ number_format($sppAmount ?? \App\Support\AppSettings::DefaultSppMonthlyAmount, 0, ',', '.') }}/bln</p>
+                </div>
+                @if (($unpaidMonths ?? 0) > 1)
+                    <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                        Nunggak {{ $unpaidMonths }} bulan · Rp {{ number_format($unpaidMonths * ($sppAmount ?? 0), 0, ',', '.') }}
+                    </div>
+                @elseif (($unpaidMonths ?? 0) === 1)
+                    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        Belum lunas 1 bulan
+                    </div>
+                @endif
+                @if ($currentPayment ?? null)
+                    <div class="flex items-center justify-between gap-3 rounded-2xl bg-cream-100 px-4 py-3">
+                        <div>
+                            <p class="font-semibold text-teal-950">{{ $currentPayment['label'] }}</p>
+                            <p class="text-xs text-slate-500">Status bulan ini</p>
+                        </div>
+                        <x-badge :tone="$currentPayment['paid'] ? 'ok' : 'warn'">
+                            {{ $currentPayment['paid'] ? 'Lunas' : 'Belum bayar' }}
+                        </x-badge>
+                    </div>
+                @endif
+                <div class="space-y-2">
+                    @foreach ($payments ?? [] as $row)
+                        <div class="flex items-center justify-between gap-3 text-sm">
+                            <span class="text-slate-600">{{ $row['label'] }}</span>
+                            @if (! ($row['obligated'] ?? true))
+                                <span class="text-slate-400">—</span>
+                            @else
+                                <span class="font-semibold {{ $row['paid'] ? 'text-teal-800' : 'text-amber-700' }}">
+                                    {{ $row['paid'] ? 'Lunas' : 'Belum' }}
+                                </span>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </section>
 
             <section id="setoran" class="scroll-mt-24 space-y-2">
                 <h2 class="ui-section-title px-1">Setoran terakhir</h2>

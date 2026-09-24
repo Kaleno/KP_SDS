@@ -18,7 +18,6 @@ use App\Models\User;
 use App\Support\DateQuery;
 use App\Support\OperationalAccess;
 use App\Support\QuranCatalog;
-use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -36,71 +35,40 @@ class SetoranController extends Controller
         $user = $request->user();
         $this->access->assertCanOperate($user);
 
-        $query = HafalanSetoran::query()
-            ->with(['santri.user', 'surah']);
-
-        if ($request->filled('quran_surah_id')) {
-            $query->where('quran_surah_id', $request->integer('quran_surah_id'));
-        }
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
-        }
-        if ($request->filled('subtype')) {
-            $query->where('subtype', $request->input('subtype'));
-        }
-        $from = DateQuery::ymd($request->input('date_from'));
-        $to = DateQuery::ymd($request->input('date_to'));
-        if ($from && $to && $from > $to) {
+        $today = now()->toDateString();
+        $from = DateQuery::ymd($request->input('date_from')) ?? $today;
+        $to = DateQuery::ymd($request->input('date_to')) ?? $today;
+        if ($from > $to) {
             [$from, $to] = [$to, $from];
         }
 
-        if ($from) {
-            $query->whereDate('setoran_date', '>=', $from);
-        }
-        if ($to) {
-            $query->whereDate('setoran_date', '<=', $to);
-        }
-        if ($request->filled('santri_id')) {
-            $query->where('santri_id', $request->integer('santri_id'));
-        }
+        $activeIds = $this->access->activeSantriIds($user);
+        $singleDay = $from === $to;
 
-        $today = now()->toDateString();
-        $weekFrom = now()->copy()->startOfWeek(Carbon::MONDAY)->toDateString();
-        $monthFrom = now()->copy()->startOfMonth()->toDateString();
-        $activePeriod = 'all';
-        if ($from && $to) {
-            $activePeriod = match (true) {
-                $from === $today && $to === $today => 'today',
-                $from === $weekFrom && $to === $today => 'week',
-                $from === $monthFrom && $to === $today => 'month',
-                default => 'custom',
-            };
-        } elseif ($from || $to) {
-            $activePeriod = 'custom';
-        }
-
-        $santriOptions = $this->access
-            ->activeSantriQuery($user)
-            ->get()
-            ->sortBy(fn (SantriProfile $santri) => $santri->user->name);
+        $setoran = HafalanSetoran::query()
+            ->with(['santri.user', 'surah'])
+            ->join('santri_profiles', 'santri_profiles.id', '=', 'hafalan_setoran.santri_id')
+            ->join('users', 'users.id', '=', 'santri_profiles.user_id')
+            ->whereDate('hafalan_setoran.setoran_date', '>=', $from)
+            ->whereDate('hafalan_setoran.setoran_date', '<=', $to)
+            ->select('hafalan_setoran.*')
+            ->when(
+                $singleDay,
+                fn ($query) => $query->orderBy('users.name')->orderBy('hafalan_setoran.id'),
+                fn ($query) => $query->orderByDesc('hafalan_setoran.setoran_date')->orderBy('users.name')->orderByDesc('hafalan_setoran.id'),
+            )
+            ->paginate(20)
+            ->withQueryString();
 
         return view('ops.setoran.index', [
-            'setoran' => $query->orderByDesc('setoran_date')->orderByDesc('id')->paginate(20)->withQueryString(),
-            'surahs' => QuranSurah::query()->orderBy('id')->get(),
-            'statuses' => SetoranStatus::cases(),
-            'santriOptions' => $santriOptions,
+            'setoran' => $setoran,
+            'summary' => $this->categorySummary($activeIds, $from, $to),
             'filters' => [
-                'quran_surah_id' => $request->input('quran_surah_id'),
-                'status' => $request->input('status'),
-                'date_from' => $from ?? $request->input('date_from'),
-                'date_to' => $to ?? $request->input('date_to'),
-                'santri_id' => $request->input('santri_id'),
-                'subtype' => $request->input('subtype'),
+                'date_from' => $from,
+                'date_to' => $to,
             ],
-            'activePeriod' => $activePeriod,
-            'today' => $today,
-            'weekFrom' => $weekFrom,
-            'monthFrom' => $monthFrom,
+            'singleDay' => $singleDay,
+            'isToday' => $singleDay && $from === $today,
         ]);
     }
 
@@ -179,6 +147,49 @@ class SetoranController extends Controller
         }
 
         return redirect()->route('ops.setoran.index')->with('status', 'Setoran dikoreksi.');
+    }
+
+    /**
+     * @param  list<int>  $activeIds
+     * @return array{
+     *     active: int,
+     *     hafalan: array{sudah: int, belum: int, ulang: int},
+     *     bacaan: array{sudah: int, belum: int, ulang: int}
+     * }
+     */
+    private function categorySummary(array $activeIds, string $from, string $to): array
+    {
+        $active = count($activeIds);
+        $summary = [
+            'active' => $active,
+            'hafalan' => ['sudah' => 0, 'belum' => $active, 'ulang' => 0],
+            'bacaan' => ['sudah' => 0, 'belum' => $active, 'ulang' => 0],
+        ];
+
+        if ($activeIds === []) {
+            return $summary;
+        }
+
+        $pairs = HafalanSetoran::query()
+            ->whereIn('santri_id', $activeIds)
+            ->whereDate('setoran_date', '>=', $from)
+            ->whereDate('setoran_date', '<=', $to)
+            ->whereIn('category', [SetoranCategory::Hafalan->value, SetoranCategory::Bacaan->value])
+            ->select('santri_id', 'category', 'status')
+            ->distinct()
+            ->get();
+
+        foreach ([SetoranCategory::Hafalan, SetoranCategory::Bacaan] as $category) {
+            $rows = $pairs->where('category', $category);
+            $sudah = $rows->unique('santri_id')->count();
+            $summary[$category->value] = [
+                'sudah' => $sudah,
+                'belum' => $active - $sudah,
+                'ulang' => $rows->where('status', SetoranStatus::Mengulang)->unique('santri_id')->count(),
+            ];
+        }
+
+        return $summary;
     }
 
     /**

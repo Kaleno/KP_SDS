@@ -2,7 +2,6 @@
     $stats = $overview['stats'];
     $pendingCount = $overview['pendingSetoran']->count();
     $followUpCount = $overview['followUpSetoran']->count();
-    $week = $overview['week'];
     $todaySession = $overview['todaySession'] ?? null;
 @endphp
 
@@ -58,32 +57,40 @@
             </div>
         @endif
 
-        @if ($overview['followUpSetoran']->isNotEmpty())
-            <div class="ui-card space-y-3 p-4">
-                <p class="text-sm font-semibold text-amber-800">Setoran perlu diulang · {{ $followUpCount }}</p>
-                @foreach ($overview['followUpSetoran'] as $item)
-                    <a href="{{ route('ops.setoran.edit', $item) }}" class="flex items-start justify-between gap-3">
-                        <div>
-                            <p class="font-medium text-teal-950">{{ $item->santri->user->name }}</p>
-                            <p class="text-xs text-slate-500">{{ $item->passageLabel() }}</p>
-                        </div>
-                        <x-badge tone="warn">{{ $item->status->label() }}</x-badge>
-                    </a>
-                @endforeach
-            </div>
-        @endif
-
-        @if ($overview['pendingSetoran']->isNotEmpty())
-            <div class="ui-card space-y-3 p-4">
-                <p class="text-sm font-semibold text-slate-700">Belum setor hari ini · {{ $pendingCount }}</p>
-                @foreach ($overview['pendingSetoran'] as $santri)
-                    <div class="flex items-start justify-between gap-3">
-                        <div>
-                            <p class="font-medium text-teal-950">{{ $santri->user->name }}</p>
-                        </div>
-                        <a href="{{ route('ops.setoran.create') }}" class="text-sm font-semibold text-teal-800">Input</a>
+        @if ($overview['followUpSetoran']->isNotEmpty() || $overview['pendingSetoran']->isNotEmpty())
+            <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <div class="ui-card overflow-hidden" data-queue="setoran-ulang">
+                    <p class="border-b border-teal-950/5 px-4 py-3 text-sm font-semibold text-amber-800">Setoran perlu diulang · {{ $followUpCount }}</p>
+                    <div class="max-h-64 space-y-3 overflow-y-auto px-4 py-3">
+                        @forelse ($overview['followUpSetoran'] as $item)
+                            <a href="{{ route('ops.setoran.edit', $item) }}" class="flex items-start justify-between gap-3">
+                                <div>
+                                    <p class="font-medium text-teal-950">{{ $item->santri->user->name }}</p>
+                                    <p class="text-xs text-slate-500">{{ $item->passageLabel() }}</p>
+                                </div>
+                                <x-badge tone="warn">{{ $item->status->label() }}</x-badge>
+                            </a>
+                        @empty
+                            <p class="text-sm text-slate-500">Tidak ada setoran yang perlu diulang.</p>
+                        @endforelse
                     </div>
-                @endforeach
+                </div>
+
+                <div class="ui-card overflow-hidden" data-queue="belum-setor">
+                    <p class="border-b border-teal-950/5 px-4 py-3 text-sm font-semibold text-slate-700">Belum setor hari ini · {{ $pendingCount }}</p>
+                    <div class="max-h-64 space-y-3 overflow-y-auto px-4 py-3">
+                        @forelse ($overview['pendingSetoran'] as $santri)
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <p class="font-medium text-teal-950">{{ $santri->user->name }}</p>
+                                </div>
+                                <a href="{{ route('ops.setoran.create') }}" class="text-sm font-semibold text-teal-800">Input</a>
+                            </div>
+                        @empty
+                            <p class="text-sm text-slate-500">Semua santri sudah setor hari ini.</p>
+                        @endforelse
+                    </div>
+                </div>
             </div>
         @endif
     @endif
@@ -124,70 +131,4 @@
     </div>
 </div>
 
-{{-- 4. SPP (Ketua saja) --}}
-@if ($isKetua && ($sppSummary ?? null))
-    <section class="space-y-3">
-        <div class="flex items-center justify-between gap-3">
-            <h2 class="ui-section-title">Ringkasan SPP</h2>
-            <a href="{{ route('ops.spp.index') }}" class="text-sm font-semibold text-teal-800">Kelola SPP</a>
-        </div>
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <div class="ui-card p-4">
-                <p class="text-xs text-slate-500">Sudah bayar bulan ini</p>
-                <p class="mt-1 font-display text-2xl font-semibold text-teal-800">
-                    {{ $sppSummary['paidThisMonth'] }}/{{ $sppSummary['paidThisMonth'] + $sppSummary['unpaidThisMonth'] }}
-                </p>
-            </div>
-            <div class="ui-card p-4">
-                <p class="text-xs text-slate-500">Belum bayar bulan ini</p>
-                <p class="mt-1 font-display text-2xl font-semibold {{ $sppSummary['unpaidThisMonth'] > 0 ? 'text-amber-800' : 'text-teal-950' }}">
-                    {{ $sppSummary['unpaidThisMonth'] }}
-                </p>
-                @if ($sppSummary['unpaidThisMonth'] > 0)
-                    <p class="mt-1 text-xs text-slate-500">Rp {{ number_format($sppSummary['unpaidThisMonthAmount'], 0, ',', '.') }}</p>
-                @endif
-            </div>
-            <a href="{{ route('ops.spp.index', ['filter' => 'nunggak']) }}" class="ui-card p-4">
-                <p class="text-xs text-slate-500">Nunggak &gt;1 bulan</p>
-                <p class="mt-1 font-display text-2xl font-semibold {{ $sppSummary['deepArrears'] > 0 ? 'text-rose-800' : 'text-teal-950' }}">
-                    {{ $sppSummary['deepArrears'] }}
-                </p>
-                <p class="mt-1 text-xs text-teal-800">Lihat daftar</p>
-            </a>
-        </div>
-    </section>
-@endif
-
-{{-- 5. Minggu ini --}}
-<section class="space-y-3">
-    <div class="flex items-center justify-between gap-3">
-        <h2 class="ui-section-title">Minggu ini</h2>
-        <a href="{{ route('laporan.attendance.index', ['date_from' => $week['from'], 'date_to' => $week['to']]) }}" class="text-sm font-semibold text-teal-800">
-            Rekap minggu ini
-        </a>
-    </div>
-    <div class="ui-card p-4 sm:p-5">
-        <p class="text-xs text-slate-500">{{ $week['fromLabel'] }}–{{ $week['toLabel'] }}</p>
-        <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <div class="rounded-xl bg-teal-50 px-3 py-2">
-                <p class="text-lg font-semibold text-teal-800">{{ $week['hadir'] }}</p>
-                <p class="text-xs text-teal-700">Hadir</p>
-            </div>
-            <div class="rounded-xl bg-amber-50 px-3 py-2">
-                <p class="text-lg font-semibold text-amber-800">{{ $week['izin'] }}</p>
-                <p class="text-xs text-amber-700">Izin</p>
-            </div>
-            <div class="rounded-xl bg-sky-50 px-3 py-2">
-                <p class="text-lg font-semibold text-sky-800">{{ $week['sakit'] }}</p>
-                <p class="text-xs text-sky-700">Sakit</p>
-            </div>
-            <div class="rounded-xl bg-rose-50 px-3 py-2">
-                <p class="text-lg font-semibold text-rose-800">{{ $week['alfa'] }}</p>
-                <p class="text-xs text-rose-700">Alfa</p>
-            </div>
-        </div>
-        @if ($week['total'] === 0)
-            <p class="mt-3 text-sm text-slate-500">Belum ada absensi dari Senin sampai hari ini.</p>
-        @endif
-    </div>
-</section>
+@include('dashboard.partials.week')

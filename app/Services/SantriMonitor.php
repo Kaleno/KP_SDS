@@ -18,6 +18,7 @@ class SantriMonitor
         private HafalanProgress $progress,
         private SetoranProgress $setoranProgress,
         private SppService $spp,
+        private SantriLifecycle $lifecycle,
     ) {}
 
     /**
@@ -29,7 +30,7 @@ class SantriMonitor
      *     hafalan: array<string, mixed>,
      *     setoran: Collection<int, HafalanSetoran>,
      *     attendances: Collection<int, Attendance>,
-     *     membership: null,
+     *     membership: array{years: int, months: int, days: int, label: string},
      *     schedules: Collection<int, never>,
      *     payments: list<mixed>,
      *     currentPayment: mixed,
@@ -93,7 +94,7 @@ class SantriMonitor
             'hafalan' => $hafalan,
             'setoran' => $setoran,
             'attendances' => $attendances,
-            'membership' => null,
+            'membership' => $this->lifecycle->membershipDuration($santri),
             'schedules' => collect(),
             'payments' => $payments,
             'currentPayment' => $currentPayment,

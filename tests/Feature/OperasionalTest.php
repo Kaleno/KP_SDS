@@ -122,42 +122,57 @@ class OperasionalTest extends TestCase
             ->assertSee('+ Catatan');
     }
 
-    public function test_setoran_index_renders_quick_filter_chips(): void
+    public function test_setoran_index_defaults_to_today_with_summary_cards(): void
     {
+        $this->travelTo('2026-09-07 08:00:00');
+
         $fx = $this->opsFixture();
 
         $this->actingAs($fx['ustaz'])
             ->get(route('ops.setoran.index'))
             ->assertOk()
+            ->assertSee('Santri aktif')
+            ->assertSee('Hafalan')
+            ->assertSee('Bacaan')
+            ->assertSee('patokan hitungan')
+            ->assertSee('3 belum')
             ->assertSee('Hari ini')
-            ->assertSee('Minggu ini')
-            ->assertSee('Bulan ini')
-            ->assertSee('Lulus')
-            ->assertSee('Mengulang')
-            ->assertSee('Filter lain')
-            ->assertSee('aria-label="Rentang waktu"', false)
-            ->assertSee('aria-label="Status setoran"', false)
-            ->assertDontSee('Reset');
+            ->assertSee('name="date_from"', false)
+            ->assertSee('value="2026-09-07"', false)
+            ->assertDontSee('Minggu ini')
+            ->assertDontSee('Filter lain');
     }
 
-    public function test_setoran_index_status_filter_hides_other_rows(): void
+    public function test_setoran_index_counts_active_santri_per_category(): void
     {
         $fx = $this->opsFixture();
         $this->seedFatihah();
         $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lulus);
         $this->makeSetoran($fx, $fx['santri'][1], SetoranStatus::Mengulang);
+        $cuti = $this->makeSantri('2026004', 'Ali Cuti');
+        $cuti->update(['status' => SantriStatus::Cuti]);
+        $this->makeSetoran($fx, $cuti, SetoranStatus::Lulus, category: 'hafalan', subtype: 'doa', doaName: 'Doa tidur');
 
         $this->actingAs($fx['ustaz'])
-            ->get(route('ops.setoran.index', ['status' => SetoranStatus::Mengulang->value]))
+            ->get(route('ops.setoran.index'))
             ->assertOk()
+            ->assertSee('>Ahmad Fauzi</p>', false)
             ->assertSee('>Hasan Basri</p>', false)
-            ->assertDontSee('>Ahmad Fauzi</p>', false)
-            ->assertSee('Reset');
+            ->assertSee('>Ali Cuti</p>', false)
+            ->assertSee('1 belum')
+            ->assertSee('1 perlu diulang')
+            ->assertSee('3 belum')
+            ->assertDontSee('>Yusuf Maulana</p>', false)
+            ->assertViewHas('summary', [
+                'active' => 3,
+                'hafalan' => ['sudah' => 0, 'belum' => 3, 'ulang' => 0],
+                'bacaan' => ['sudah' => 2, 'belum' => 1, 'ulang' => 1],
+            ]);
     }
 
-    public function test_setoran_index_today_filter_hides_older_rows(): void
+    public function test_setoran_index_selected_range_hides_rows_outside_it(): void
     {
-        $this->travelTo('2026-09-07 08:00:00'); // Monday
+        $this->travelTo('2026-09-07 08:00:00');
 
         $fx = $this->opsFixture();
         $this->seedFatihah();
@@ -165,13 +180,43 @@ class OperasionalTest extends TestCase
         $this->makeSetoran($fx, $fx['santri'][1], SetoranStatus::Lulus, '2026-09-07');
 
         $this->actingAs($fx['ustaz'])
+            ->get(route('ops.setoran.index'))
+            ->assertOk()
+            ->assertSee('>Hasan Basri</p>', false)
+            ->assertDontSee('>Ahmad Fauzi</p>', false);
+
+        $this->actingAs($fx['ustaz'])
             ->get(route('ops.setoran.index', [
-                'date_from' => '2026-09-07',
+                'date_from' => '2026-09-01',
                 'date_to' => '2026-09-07',
             ]))
             ->assertOk()
             ->assertSee('>Hasan Basri</p>', false)
-            ->assertDontSee('>Ahmad Fauzi</p>', false);
+            ->assertSee('>Ahmad Fauzi</p>', false)
+            ->assertSee('7 September 2026')
+            ->assertSee('Hari ini');
+    }
+
+    public function test_setoran_index_pages_past_twenty_rows(): void
+    {
+        $fx = $this->opsFixture();
+        $this->seedFatihah();
+
+        for ($ayah = 1; $ayah <= 21; $ayah++) {
+            $this->makeSetoran($fx, $fx['santri'][0], SetoranStatus::Lulus, ayahEnd: $ayah);
+        }
+
+        $this->actingAs($fx['ustaz'])
+            ->get(route('ops.setoran.index'))
+            ->assertOk()
+            ->assertSee('Al-Fatihah 1–20')
+            ->assertDontSee('Al-Fatihah 1–21');
+
+        $this->actingAs($fx['ustaz'])
+            ->get(route('ops.setoran.index', ['page' => 2]))
+            ->assertOk()
+            ->assertSee('Al-Fatihah 1–21')
+            ->assertDontSee('Al-Fatihah 1–20');
     }
 
     public function test_setoran_create_embeds_next_ayah_after_last_setoran(): void
@@ -405,18 +450,29 @@ class OperasionalTest extends TestCase
     /**
      * @param  array{ustaz: User}  $fx
      */
-    private function makeSetoran(array $fx, SantriProfile $santri, SetoranStatus $status, ?string $date = null, int $ayahEnd = 7): HafalanSetoran
-    {
+    private function makeSetoran(
+        array $fx,
+        SantriProfile $santri,
+        SetoranStatus $status,
+        ?string $date = null,
+        int $ayahEnd = 7,
+        string $category = 'bacaan',
+        string $subtype = 'alquran',
+        ?string $doaName = null,
+    ): HafalanSetoran {
+        $isQuran = $subtype !== 'doa';
+
         return HafalanSetoran::query()->create([
             'santri_id' => $santri->id,
             'ustaz_user_id' => $fx['ustaz']->id,
-            'activity_type' => 'ngaji',
-            'category' => 'bacaan',
-            'subtype' => 'alquran',
-            'quran_surah_id' => 1,
+            'activity_type' => $category === 'hafalan' ? 'hafalan' : 'ngaji',
+            'category' => $category,
+            'subtype' => $subtype,
+            'doa_name' => $doaName,
+            'quran_surah_id' => $isQuran ? 1 : null,
             'setoran_date' => $date ?? now()->toDateString(),
-            'ayah_start' => 1,
-            'ayah_end' => $ayahEnd,
+            'ayah_start' => $isQuran ? 1 : null,
+            'ayah_end' => $isQuran ? $ayahEnd : null,
             'status' => $status,
         ]);
     }

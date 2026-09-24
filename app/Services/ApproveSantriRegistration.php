@@ -48,6 +48,8 @@ class ApproveSantriRegistration
                 'gender' => $registration->gender,
                 'birth_date' => $registration->birth_date,
                 'status' => SantriStatus::Aktif,
+                'joined_at' => now()->toDateString(),
+                'spp_obligation_from' => now()->startOfMonth()->toDateString(),
             ]);
 
             $registration->update([

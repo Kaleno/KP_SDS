@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Storage;
     'user_id',
     'nis',
     'parent_name',
+    'address',
     'school_level',
     'track',
     'iqro_level',
@@ -25,6 +26,9 @@ use Illuminate\Support\Facades\Storage;
     'gender',
     'birth_date',
     'status',
+    'joined_at',
+    'graduated_at',
+    'spp_obligation_from',
 ])]
 class SantriProfile extends Model
 {
@@ -39,6 +43,9 @@ class SantriProfile extends Model
             'school_level' => SchoolLevel::class,
             'track' => SantriTrack::class,
             'birth_date' => 'date',
+            'joined_at' => 'date',
+            'graduated_at' => 'date',
+            'spp_obligation_from' => 'date',
             'iqro_level' => 'integer',
         ];
     }

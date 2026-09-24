@@ -25,7 +25,7 @@ class AttendanceSession extends Model
      */
     public function openedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'opened_by_user_id');
+        return $this->belongsTo(User::class, 'opened_by_user_id')->withTrashed();
     }
 
     /**

@@ -42,9 +42,11 @@ class UpdateSantriRequest extends FormRequest
             'gender' => ['required', Rule::enum(Gender::class)],
             'birth_date' => ['nullable', 'date'],
             'parent_name' => ['nullable', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:1000'],
             'school_level' => ['nullable', Rule::enum(SchoolLevel::class)],
             'track' => ['required', Rule::enum(SantriTrack::class)],
             'status' => ['required', Rule::enum(SantriStatus::class)],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'password' => ['nullable', 'confirmed', Password::defaults()],
         ];
     }

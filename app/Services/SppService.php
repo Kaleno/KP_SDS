@@ -332,6 +332,14 @@ class SppService
 
     public function obligationStart(SantriProfile $santri): Carbon
     {
+        if ($santri->spp_obligation_from) {
+            return $santri->spp_obligation_from->copy()->startOfMonth();
+        }
+
+        if ($santri->joined_at) {
+            return $santri->joined_at->copy()->startOfMonth();
+        }
+
         return ($santri->created_at ?? now())->copy()->startOfMonth();
     }
 

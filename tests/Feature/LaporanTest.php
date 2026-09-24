@@ -29,36 +29,25 @@ class LaporanTest extends TestCase
         $this->travelTo('2026-09-23 10:00:00');
     }
 
-    public function test_ketua_dashboard_shows_today_counts(): void
+    public function test_ketua_dashboard_shows_summary_without_daily_ops_queue(): void
     {
         $fx = $this->opsFixture();
-        $this->seedFatihah();
-        $this->openMixedAttendance($fx);
-        HafalanSetoran::query()->create([
-            'santri_id' => $fx['santri'][0]->id,
-            'ustaz_user_id' => $fx['ustaz']->id,
-            'activity_type' => 'ngaji',
-            'category' => 'bacaan',
-            'subtype' => 'alquran',
-            'quran_surah_id' => 1,
-            'setoran_date' => now()->toDateString(),
-            'ayah_start' => 1,
-            'ayah_end' => 7,
-            'status' => SetoranStatus::Lulus,
-        ]);
 
         $this->actingAs($fx['ketua'])
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Santri aktif')
-            ->assertSee('Absensi hari ini')
-            ->assertSee('Setoran hari ini')
-            ->assertSee('Alfa hari ini')
+            ->assertSee('Ringkasan SPP')
+            ->assertSee('Minggu ini')
+            ->assertSee('Keuangan')
+            ->assertDontSee('Absensi hari ini')
+            ->assertDontSee('Setoran hari ini')
+            ->assertDontSee('Alfa hari ini')
             ->assertDontSee('Kelas aktif')
             ->assertDontSee('Jadwal hari ini');
     }
 
-    public function test_setoran_history_can_filter_by_status(): void
+    public function test_setoran_history_counts_mengulang_without_hiding_other_rows(): void
     {
         $fx = $this->opsFixture();
         $this->seedFatihah();
@@ -89,9 +78,15 @@ class LaporanTest extends TestCase
         ]);
 
         $this->actingAs($fx['ustaz'])
-            ->get(route('ops.setoran.index', ['status' => SetoranStatus::Mengulang->value]))
+            ->get(route('ops.setoran.index'))
             ->assertOk()
-            ->assertSee('Hasan Basri');
+            ->assertSee('Ahmad Fauzi')
+            ->assertSee('Hasan Basri')
+            ->assertViewHas('summary', [
+                'active' => 3,
+                'hafalan' => ['sudah' => 0, 'belum' => 3, 'ulang' => 0],
+                'bacaan' => ['sudah' => 2, 'belum' => 1, 'ulang' => 1],
+            ]);
     }
 
     public function test_attendance_recap_counts_alfa_per_santri_without_halaqah_filter(): void

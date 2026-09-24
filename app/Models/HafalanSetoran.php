@@ -63,7 +63,7 @@ class HafalanSetoran extends Model
      */
     public function ustaz(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'ustaz_user_id');
+        return $this->belongsTo(User::class, 'ustaz_user_id')->withTrashed();
     }
 
     /**
@@ -115,6 +115,16 @@ class HafalanSetoran extends Model
             default => $this->isIqro()
                 ? 'Iqro '.$this->iqro_level.' hlm. '.$this->iqro_page
                 : $this->quranPassageLabel(),
+        };
+    }
+
+    public function listPassage(): string
+    {
+        return match ($this->subtype) {
+            SetoranSubtype::Iqro => 'Iqro '.$this->iqro_level.' hlm. '.$this->iqro_page,
+            SetoranSubtype::Doa => $this->doa_name ?: 'Doa',
+            SetoranSubtype::Alquran, SetoranSubtype::Juz30 => ($this->surah?->name_id ?? 'Surat').' '.$this->ayahRange(),
+            default => $this->passageLabel(),
         };
     }
 

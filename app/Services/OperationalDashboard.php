@@ -72,12 +72,9 @@ class OperationalDashboard
         $setoranHariIni = HafalanSetoran::query()->whereDate('setoran_date', $todayDate)->count();
         $sudahSetorHariIni = $this->sudahSetorCount($santriIds, $todayDate);
 
-        $weekFrom = now()->copy()->startOfWeek(Carbon::MONDAY)->toDateString();
-        $weekCounts = $this->attendanceCountsBetween($weekFrom, $todayDate);
-
         return [
             'dayLabel' => WeekDay::label($day),
-            'todayLabel' => DateLabel::dayMonthYear(now()),
+            'todayLabel' => DateLabel::dayMonthYear($today),
             'isOffDay' => $isOffDay,
             'offDayMessage' => $isOffDay ? $this->calendar->offDayMessage($today) : null,
             'stats' => [
@@ -96,17 +93,69 @@ class OperationalDashboard
             'alfaToday' => $this->alfaToday($todayDate),
             'pendingSetoran' => $this->pendingSetoran($santriIds, $todayDate),
             'followUpSetoran' => $this->followUpSetoran($todayDate),
-            'week' => [
-                'from' => $weekFrom,
-                'to' => $todayDate,
-                'fromLabel' => now()->copy()->startOfWeek(Carbon::MONDAY)->format('d/m'),
-                'toLabel' => now()->format('d/m'),
-                'hadir' => $weekCounts[AttendanceStatus::Hadir->value],
-                'izin' => $weekCounts[AttendanceStatus::Izin->value],
-                'sakit' => $weekCounts[AttendanceStatus::Sakit->value],
-                'alfa' => $weekCounts[AttendanceStatus::Alfa->value],
-                'total' => array_sum($weekCounts),
-            ],
+            'week' => $this->weekSummary($today),
+        ];
+    }
+
+    /**
+     * Ringkasan minggu untuk beranda ketua, tanpa antrean setoran atau sesi hari ini.
+     *
+     * @return array{
+     *     dayLabel: string,
+     *     todayLabel: string,
+     *     week: array{
+     *         from: string,
+     *         to: string,
+     *         fromLabel: string,
+     *         toLabel: string,
+     *         hadir: int,
+     *         izin: int,
+     *         sakit: int,
+     *         alfa: int,
+     *         total: int
+     *     }
+     * }
+     */
+    public function weekRecap(): array
+    {
+        $today = now();
+
+        return [
+            'dayLabel' => WeekDay::label($today->isoWeekday()),
+            'todayLabel' => DateLabel::dayMonthYear($today),
+            'week' => $this->weekSummary($today),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     from: string,
+     *     to: string,
+     *     fromLabel: string,
+     *     toLabel: string,
+     *     hadir: int,
+     *     izin: int,
+     *     sakit: int,
+     *     alfa: int,
+     *     total: int
+     * }
+     */
+    private function weekSummary(Carbon $today): array
+    {
+        $todayDate = $today->toDateString();
+        $weekFrom = $today->copy()->startOfWeek(Carbon::MONDAY);
+        $weekCounts = $this->attendanceCountsBetween($weekFrom->toDateString(), $todayDate);
+
+        return [
+            'from' => $weekFrom->toDateString(),
+            'to' => $todayDate,
+            'fromLabel' => $weekFrom->format('d/m'),
+            'toLabel' => $today->format('d/m'),
+            'hadir' => $weekCounts[AttendanceStatus::Hadir->value],
+            'izin' => $weekCounts[AttendanceStatus::Izin->value],
+            'sakit' => $weekCounts[AttendanceStatus::Sakit->value],
+            'alfa' => $weekCounts[AttendanceStatus::Alfa->value],
+            'total' => array_sum($weekCounts),
         ];
     }
 
@@ -208,7 +257,6 @@ class OperationalDashboard
             ->with('user')
             ->whereIn('santri_profiles.id', $pendingIds)
             ->orderBy('users.name')
-            ->limit(8)
             ->get();
     }
 
@@ -222,7 +270,6 @@ class OperationalDashboard
             ->whereDate('setoran_date', $today)
             ->where('status', SetoranStatus::Mengulang)
             ->orderByDesc('id')
-            ->limit(6)
             ->get();
     }
 }
